@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
+var verifyToken = require('../config/verifyToken');
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+router.get('/', verifyToken, function(req, res, next) {
+  res.status(200).json('Testing');
 });
 
 module.exports = router;

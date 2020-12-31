@@ -4,6 +4,9 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
+const cors = require('cors');
+
+require('./config/passport');
 
 require('dotenv').config();
 
@@ -25,6 +28,18 @@ app.use(logger('dev'));
 app.use('/uploads', express.static('uploads'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use(cors(
+  {
+    origin: [
+      `${process.env.FRONT_URL}`,
+      'http://localhost:3000',
+      'https://mypage.com',
+    ],
+    credentials: true // Enable HTTP cookies over CORS
+  }
+));
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
