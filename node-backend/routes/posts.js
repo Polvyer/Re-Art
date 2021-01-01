@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const verifyToken = require('../config/verifyToken');
 
 // Require controller module
 const post_controller = require('../controllers/postController');
@@ -10,7 +11,7 @@ const post_controller = require('../controllers/postController');
 router.get('/', post_controller.post_list);
 
 // POST request for creating Post
-router.post('/', post_controller.post_create);
+router.post('/', verifyToken, post_controller.post_create);
 
 // GET request for one Post
 router.get('/:postid', post_controller.post_detail);
