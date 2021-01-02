@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
 import Navbar from './Navbar';
-import Content from './Content'
-import { UserContext } from '../context/UserContext'
+import Content from './Content';
+import Register from './Register';
+import { UserContext } from '../context/UserContext';
 
 const Routes = () => {
 
@@ -16,13 +17,14 @@ const Routes = () => {
 
   return (
     <BrowserRouter>
-    <Navbar toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} />
+    <Navbar toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} user={user} />
       <Switch>
         <UserContext.Provider value={{ user, setUser }}>
           <Route exact path='/'>
             <Redirect to='/posts' />
           </Route>
           <Route path='/posts' render={(props) => <Content {...props} toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} />} />
+          <Route path='/users/new' component={Register} />
         </UserContext.Provider>
       </Switch>
     </BrowserRouter>
