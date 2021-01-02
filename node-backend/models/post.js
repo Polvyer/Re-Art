@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 const PostSchema = new Schema(
   {
-    title: { type: String, required: true, minlength: 1, maxlength: 100 },
+    title: { type: String, required: true, minlength: 1, maxlength: 50 },
     summary: { type: String, required: true, minlength: 1, maxlength: 1000 },
     art_type: { type: String, required: true, enum: ['Drawing', 'Photography', 'Painting', 'Inking', 'Other'], default: 'Other' },
     hashtags: { type: String, required: true, minlength: 1, maxlength: 100 },

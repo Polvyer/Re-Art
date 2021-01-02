@@ -1,13 +1,13 @@
 import React from 'react'
 import styled from 'styled-components'
 import { Link } from 'react-router-dom'
-import search from '../images/icons/search.svg'
-import x from '../images/icons/x.svg'
-import house_door_fill from '../images/icons/house-door-fill.svg'
-import file_earmark_arrow_up_fill from '../images/icons/file-earmark-arrow-up-fill.svg'
-import person_circle from '../images/icons/person-circle.svg'
-import bell_fill from '../images/icons/bell-fill.svg'
-import three_dots_vertical from '../images/icons/three-dots-vertical.svg'
+import search from '../images/navIcons/search.svg'
+import x from '../images/navIcons/x.svg'
+import house_door_fill from '../images/navIcons/house-door-fill.svg'
+import file_earmark_arrow_up_fill from '../images/navIcons/file-earmark-arrow-up-fill.svg'
+import person_circle from '../images/navIcons/person-circle.svg'
+import bell_fill from '../images/navIcons/bell-fill.svg'
+import three_dots_vertical from '../images/navIcons/three-dots-vertical.svg'
 
 
 const Nav = styled.nav`
