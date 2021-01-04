@@ -7,6 +7,11 @@ const User = require('../models/user');
 const Image = require('../models/image');
 const generateToken = require('../config/generateToken')
 
+// Check if user is logged in
+exports.session_check = function(req, res, next) {
+  console.log(req.user);
+};
+
 // Handle Login request
 exports.session_login = function(req, res, next) {
   passport.authenticate('local', { session: false }, function(err, user, { message }) {

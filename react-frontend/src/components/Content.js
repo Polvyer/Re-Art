@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import axios from 'axios'
+
+// Components
 import Sidebar from './Sidebar'
 import Posts from './Posts'
+
+// Filter icons
 import Anonymous from '../images/userIcons/anonymous.svg'
 import Hobbyist from '../images/userIcons/hobbyist.png'
 import Professional from '../images/userIcons/professional.png'
 import Student from '../images/userIcons/student.png'
-
 
 const Main = styled.main`
   display: flex;
@@ -15,24 +18,24 @@ const Main = styled.main`
   position: relative;
 `;
 
-const Content = ({ toggleSidebar, sidebarActive }) => {
+const Content = ({ toggleSidebar, sidebarActive, setSidebarActive }) => {
 
   const [ data, setData ] = useState([]);
 
   const [ hashtagFilter, setHashtagFilter ] = useState('');
 
   const [ artTypeFilters, setArtTypeFilters ] = useState([
-    { type: 'Drawing', checked: true },
-    { type: 'Photography', checked: true },
-    { type: 'Painting', checked: true },
-    { type: 'Inking', checked: true },
+    { type: 'Drawing', checked: false },
+    { type: 'Photography', checked: false },
+    { type: 'Painting', checked: false },
+    { type: 'Inking', checked: false },
   ]);
 
   const [ iconFilters, setIconFilters ] = useState([
-    { type: 'Hobbyist', checked: true, img: Hobbyist },
-    { type: 'Student', checked: true, img: Student },
-    { type: 'Professional', checked: true, img: Professional },
-    { type: 'Anonymous', checked: true, img: Anonymous },
+    { type: 'Hobbyist', checked: false, img: Hobbyist },
+    { type: 'Student', checked: false, img: Student },
+    { type: 'Professional', checked: false, img: Professional },
+    { type: 'Anonymous', checked: false, img: Anonymous },
   ]);
 
   const setArtTypes = (index) => {
@@ -53,6 +56,11 @@ const Content = ({ toggleSidebar, sidebarActive }) => {
 
   useEffect(() => {
     fetchPosts();
+
+    // componentWillUnmount
+    return () => {
+      setSidebarActive(false);
+    }
   }, []);
 
   const fetchPosts = async () => {

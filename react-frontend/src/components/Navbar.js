@@ -1,6 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
 import { Link } from 'react-router-dom'
+
+// Navbar icons
 import search from '../images/navIcons/search.svg'
 import x from '../images/navIcons/x.svg'
 import person_plus_fill from '../images/navIcons/person-plus-fill.svg'
@@ -23,16 +25,14 @@ const Search = styled.div`
   cursor: pointer;
 `;
 
-const InvisibleSearch = styled.div`
-  visibility: hidden;
-`;
-
-const DisabledIcon = styled.img`
+// Highlights (in green) the current navbar icon the user is on
+const ActiveIcon = styled.img`
   width: 1.7em;
   height: 1.7em;
   filter: invert(84%) sepia(45%) saturate(640%) hue-rotate(51deg) brightness(103%) contrast(98%);
 `;
 
+// Standard (white) navbar icon
 const Icon = styled.img`
   width: 1.7em;
   height: 1.7em;
@@ -46,10 +46,10 @@ const Title = styled.h4`
   font-weight: 400;
 `;
 
-const Navbar = ({ toggleSidebar, sidebarActive, user }) => {
+const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
 
   const loggedInIcons = [
-    { href: "/", src: house_door_fill, alt: "home" },
+    { href: "/", src: house_door_fill, alt: "Home" },
     { href: "/users/new", src: file_earmark_arrow_up_fill, alt: "post" },
     { href: "/", src: person_circle, alt: "portfolio" },
     { href: "/", src: bell_fill, alt: "notifications" },
@@ -57,26 +57,33 @@ const Navbar = ({ toggleSidebar, sidebarActive, user }) => {
   ];
 
   const loggedOutIcons = [
-    { href: "/", src: house_door_fill, alt: "home" },
-    { href: "/", src: person_circle, alt: "login" },
-    { href: "/users/new", src: person_plus_fill, alt: "register" },
+    { href: "/", src: house_door_fill, alt: "Home" },
+    { href: "/session/new", src: person_circle, alt: "Login" },
+    { href: "/users/new", src: person_plus_fill, alt: "Sign Up" },
   ];
 
+  // Display specific icons based on whether a user is logged in
   const icons = user ? [...loggedInIcons] : [...loggedOutIcons];
+
+  // Determines whether to show search icon
+  let searchClasses = "navbar-brand";
+  if (navTitle !== "Home") {
+    searchClasses = "navbar-brand invisible";
+  }
 
   return (
     <Nav className="navbar navbar-expand-lg justify-content-between">
-      <Search onClick={toggleSidebar} className="navbar-brand">
+      <Search onClick={toggleSidebar} className={searchClasses} >
         {sidebarActive ? <Icon src={x} alt="search" /> : <Icon src={search} alt="search" />}
       </Search>
       <Title className="navbar-text">
-        Re:Art
+        {navTitle}
       </Title>
       <div>
         {icons.map(icon => {
           return (
             <Link key={icon.alt} to={icon.href} className="navbar-brand">
-              <Icon src={icon.src} alt={icon.alt} />
+              {navTitle === icon.alt ? <ActiveIcon src={icon.src} alt={icon.alt} /> : <Icon src={icon.src} alt={icon.alt} />}
             </Link>
           );
         })}
