@@ -3,25 +3,28 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const verifyToken = async (req, res, next) => {
-  console.log('Cookies: ', req.cookies);
+
+  // Check the user's cookies for a cookie named token
   const token = req.cookies.token || '';
 
   console.log("Cookies: ", req.cookies);
 
   try {
     if (!token) {
-      return res.status(401).json({ error: 'You need to Login' })
+      // User is not logged in
+      return res.status(401).json({ error: 'You need to login' });
     }
-    const decrypt = await jwt.verify(token, process.env.JWT_SECRET);
 
-    console.log("Decrypt: ", decrypt); // id will be accessible through here
+    // Verify the token
+    const token_payload = await jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = {
-      id: decrypt.id
-    };
+    // Token payload only stores portfolio id (this is determined in generateToken.js)
+    req.portfolio = { "_id": token_payload.id };
+
+    // Go to the next middleware
     next();
   } catch (err) {
-    return res.status(500).json(err.toString());
+    return next(err);
   }
 };
 

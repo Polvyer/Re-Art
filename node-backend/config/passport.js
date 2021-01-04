@@ -1,12 +1,14 @@
 const passport = require('passport');
+const bcrypt = require('bcryptjs');
 const LocalStrategy = require('passport-local').Strategy;
-const passportJWT = require('passport-jwt');
-const JWTStrategy = passportJWT.Strategy;
-const ExtractJWT = passportJWT.ExtractJwt;
+const JWTStrategy = require('passport-jwt').Strategy;
+
+// Models
 const User = require('../models/user');
 const Portfolio = require('../models/portfolio');
 const Image = require('../models/image');
 
+// Extract token from cookie
 const cookieExtractor = function(req) {
   let token = null;
   if (req && req.cookies) {
@@ -15,6 +17,7 @@ const cookieExtractor = function(req) {
   return token;
 }
 
+// Authenticate user
 passport.use(
   new LocalStrategy((username, password, done) => {
     User.findOne({ username }, (err, user) => {
@@ -22,16 +25,24 @@ passport.use(
           return done(err);
         }
         if (!user) {
-          return done(null, false, { message: 'Incorrect username' });
+          // Username does not exist
+          return done(null, false, { message: 'Username does not exist' });
         }
-        if (user.password !== password) {
-          return done(null, false, { message: 'Incorrect password' });
-        }
-        return done(null, user, { message: 'Logged in successfully' });
+        // Compare hashed passwords
+        bcrypt.compare(password, user.password, (err, res) => {
+          if (res) {
+            // Passwords match
+            return done(null, user, { message: 'Logged in successfully' });
+          } else {
+            // Passwords do not match
+            return done(null, false, { message: 'Incorrect password' });
+          }
+        });
       });
   })
 );
 
+// Verify user
 passport.use(
   new JWTStrategy({
     jwtFromRequest: cookieExtractor,

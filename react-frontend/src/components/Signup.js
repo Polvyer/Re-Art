@@ -31,8 +31,7 @@ const Signup = () => {
   // Scrolls user up to errors
   useEffect(() => {
     if ((errors.length > 0) && errorRef.current) {
-      console.log(errorRef.current);
-      errorRef.current.scrollIntoView()
+      errorRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [errors])
 

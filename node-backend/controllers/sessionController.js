@@ -2,45 +2,91 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const generateToken = require('../config/generateToken');
+
+// Models
 const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
 const Image = require('../models/image');
-const generateToken = require('../config/generateToken')
 
-// Check if user is logged in
+// Check if user is logged in / has a valid token
 exports.session_check = function(req, res, next) {
-  console.log(req.user);
+  Portfolio.findById(req.portfolio._id)
+    .populate('owner', 'username') // Only returns the username
+    .populate('avatar')
+    .exec((err, portfolio) => {
+      if (err) { return next(err); }
+
+      // Construct user
+      const user = {
+        "_id": portfolio._id,
+        "owner": portfolio.owner.username,
+        "icon": portfolio.icon,
+      };
+
+      // Add biography if it exists
+      if (portfolio.biography) { 
+        user.biography = portfolio.biography; 
+      }
+
+      // Add avatar if it exists
+      if (portfolio.avatar) {
+        user.avatar = portfolio.avatar;
+      }
+
+      return res.status(200).json(user);
+    });
 };
 
 // Handle Login request
 exports.session_login = function(req, res, next) {
   passport.authenticate('local', { session: false }, function(err, user, { message }) {
-    if (err || !user) {
-      return res.status(400).json({
-        message: 'Something is not right',
-        user // user === false
-      });
+    if (err) { return next(err); }
+    if (!user) {
+      // Username does not exist OR incorrect password
+      return res.status(400).json([message]);
     }
 
+    // Typically establishes a login session
+    // BUT in this case it assigns user => req.user
     req.login(user, { session: false }, function(err) {
-      if (err) { res.send(err); }
+      if (err) { return next(err); }
     });
 
-    // Generate a signed json web token with the portfolio _id
-    // and return it in the response
-    Portfolio.findOne({ owner: user._id }) // Manully populates a property
-      .populate('owner', 'username') // Only return the username
+    // Get user's info
+    Portfolio.findOne({ owner: user._id })
+      .populate('owner', 'username') // Only returns the username
       .populate('avatar')
       .exec(async (err, portfolio) => {
-        if (err) { res.send(err); }
+        if (err) { return next(err); }
+
         try {
+          // Generate a new JWT token
           await generateToken(res, portfolio._id);
-          return res.status(200).json(portfolio);
+
+          // Construct user
+          const user = {
+            "_id": portfolio._id,
+            "owner": portfolio.owner.username,
+            "icon": portfolio.icon,
+          };
+
+          // Add biography if it exists
+          if (portfolio.biography) { 
+            user.biography = portfolio.biography; 
+          }
+
+          // Add avatar if it exists
+          if (portfolio.avatar) {
+            user.avatar = portfolio.avatar;
+          }
+
+          return res.status(200).json(user);
         } catch(err) {
-          return res.status(500).json(err.toString());
+          return next(err);
         }
       });
-  })(req, res, next);
+  })(req, res, next); // This gives the custom callback access to the req and res objects through closure
 };
 
 // Handle Logout request

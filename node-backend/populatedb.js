@@ -2,6 +2,9 @@
 const userArgs = process.argv.slice(2);
 
 const async = require('async');
+const bcrypt = require('bcryptjs');
+
+// Models
 const Comment = require('./models/comment');
 const Image = require('./models/image');
 const Portfolio = require('./models/portfolio');
@@ -21,18 +24,25 @@ const portfolios = []
 const posts = []
 const users = []
 
-function userCreate(username, password, cb) {
-  const user = new User({ username, password });
-
-  user.save(function(err) {
-    if (err) {
+function userCreate(username, email, password, cb) {
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
+    if (err) { 
       cb(err, null);
       return;
     }
 
-    console.log('New User: ' + user);
-    users.push(user);
-    cb(null, user);
+    const user = new User({ username, email, 'password': hashedPassword });
+
+    user.save(function(err) {
+      if (err) {
+        cb(err, null);
+        return;
+      }
+
+      console.log('New User: ' + user);
+      users.push(user);
+      cb(null, user);
+    });
   });
 }
 
@@ -107,13 +117,13 @@ function commentCreate(description, likes, date_posted, poster, post, attachment
 function createImageUsers(cb) {
   async.series([
     function(callback) {
-      userCreate('Polvyer', 'password', callback);
+      userCreate('Polvyer', "polvyer@gmail.com", 'password', callback);
     },
     function(callback) {
-      userCreate('jasthebaka', 'password', callback);
+      userCreate('jasthebaka', "jasthebaka@gmail.com", 'password', callback);
     },
     function(callback) {
-      userCreate('Pokemon7thst', 'password', callback);
+      userCreate('Pokemon7thst', "pokemon7thst@gmail.com", 'password', callback);
     },
     function(callback) {
       imageCreate("avatar.jpeg", "./uploads/avatar.jpeg", callback);
@@ -150,6 +160,21 @@ function createPosts(cb) {
     function(callback) {
       postCreate('Is p=np?', 'I need help figuring this out!', 'Drawing', '#difficult', false, false, portfolios[0], images[1], callback);
     },
+    function(callback) {
+      postCreate('Is p=np?', 'I need help figuring this out!', 'Drawing', '#difficult', false, false, portfolios[0], images[1], callback);
+    },
+    function(callback) {
+      postCreate('Is p=np?', 'I need help figuring this out!', 'Drawing', '#difficult', false, false, portfolios[0], images[1], callback);
+    },
+    function(callback) {
+      postCreate('Is p=np?', 'I need help figuring this out!', 'Drawing', '#difficult', false, false, portfolios[0], images[1], callback);
+    },
+    function(callback) {
+      postCreate('Is p=np?', 'I need help figuring this out!', 'Drawing', '#difficult', false, false, portfolios[0], images[1], callback);
+    },
+    function(callback) {
+      postCreate('Is p=np?', 'I need help figuring this out!', 'Drawing', '#difficult', false, false, portfolios[0], images[1], callback);
+    },
   ],
   // optional callback
   cb);
@@ -157,6 +182,12 @@ function createPosts(cb) {
 
 function createComments(cb) {
   async.parallel([
+    function(callback) {
+      commentCreate('I recommend more colors!', false, false, portfolios[0], posts[0], images[2], callback);
+    },
+    function(callback) {
+      commentCreate('I recommend more colors!', false, false, portfolios[0], posts[0], images[2], callback);
+    },
     function(callback) {
       commentCreate('I recommend more colors!', false, false, portfolios[0], posts[0], images[2], callback);
     },
