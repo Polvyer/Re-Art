@@ -6,7 +6,7 @@ import { Link, useHistory } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 
 // Styled Components
-import FormContainer from './FormContainer';
+import FormStyles from './FormStyles';
 
 const Signup = () => {
 
@@ -84,7 +84,7 @@ const Signup = () => {
   };
 
   return (
-    <FormContainer className="signup-form">
+    <FormStyles className="signup-form">
       {errors.length > 0 ? errors.map((error, index) => <div ref={index.toString() === '0' ? errorRef : undefined} key={index} className="alert alert-danger">{error}</div>) : null}
       <form onSubmit={handleSubmit}>
 		    <h2>Sign Up</h2>
@@ -149,7 +149,7 @@ const Signup = () => {
       <div className="text-center">
         Already have an account? <Link to="/session/new">Login here</Link>
       </div>
-    </FormContainer>
+    </FormStyles>
   );
 };
 

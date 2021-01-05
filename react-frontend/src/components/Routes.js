@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Components
 import Navbar from './Navbar';
-import Content from './Content';
+import Home from './Home';
 import Signup from './Signup';
 import Login from './Login';
 import Portfolio from './Portfolio';
@@ -56,7 +56,7 @@ const Routes = () => {
           <Route exact path='/'>
             <Redirect to='/posts' />
           </Route>
-          <Route path='/posts' render={(props) => <Content {...props} setSidebarActive={setSidebarActive} toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} />} />
+          <Route path='/posts' render={(props) => <Home {...props} setSidebarActive={setSidebarActive} sidebarActive={sidebarActive} />} />
           <Route path='/session/new' component={Login} />
           <Route path='/users/new' component={Signup} />
           <Route path='/users/:userid' component={Portfolio} />

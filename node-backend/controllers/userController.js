@@ -6,6 +6,8 @@ const generateToken = require('../config/generateToken');
 // Models
 const User = require('../models/user');
 const Portfolio = require('../models/portfolio');
+const Post = require('../models/post');
+const Image = require('../models/image');
 
 // Handle Register request
 exports.user_register = [
@@ -110,7 +112,45 @@ exports.user_register = [
 
 // Send details for a specific User
 exports.user_detail = function(req, res, next) {
-  res.send('TODO: User detail: ' + req.params.userid);
+  // req.params.userid => portfolio id (not user id)
+  async.parallel({
+    // Get user's info (portfolio info)
+    portfolio: function(callback) {
+      Portfolio.findById(req.params.userid)
+      .populate('owner', 'username') // Only returns the username
+      .populate('avatar')
+      .exec(callback)
+    },
+    // Get all posts made by user
+    posts: function(callback) {
+      Post.find({ "poster": req.params.userid })
+        .populate('poster')
+        .populate('image')
+        .exec(callback)
+    }
+  }, function(err, results) {
+    if (err) { return next(err); }
+
+    // Construct user
+    const user = {
+      "_id": results.portfolio._id,
+      "owner": results.portfolio.owner.username,
+      "icon": results.portfolio.icon,
+      "posts": results.posts,
+    };
+
+    // Add biography if it exists
+    if (results.portfolio.biography) { 
+      user.biography = results.portfolio.biography; 
+    }
+
+    // Add avatar if it exists
+    if (results.portfolio.avatar) {
+      user.avatar = results.portfolio.avatar;
+    }
+
+    return res.status(200).json(user);
+  });
 };
 
 // Handle User update

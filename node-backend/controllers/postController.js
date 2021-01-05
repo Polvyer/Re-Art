@@ -7,13 +7,42 @@ const { body, validationResult } = require('express-validator');
 
 // Send list of all Posts
 exports.post_list = function(req, res, next) {
+
+  // Get all posts from database
   Post.find()
-    .populate('poster')
     .populate('image')
+    .populate({
+      path: 'poster',
+      model: 'Portfolio',
+      populate: {
+        path: 'owner',
+        model: 'User',
+      }
+    })
     .exec(function(err, post_list) {
       if (err) { return next(err); }
+
+      // Modify post list to liking
+      const posts = post_list.map(post => {
+        const poster = {
+          _id: post.poster._id,
+          icon: post.poster.icon,
+          owner: post.poster.owner.username,
+        };
+        return {
+          art_type: post.art_type,
+          date_posted: post.date_posted,
+          hashtags: post.hashtags,
+          image: post.image,
+          poster: poster,
+          private: post.private,
+          summary: post.summary,
+          title: post.title,
+        };
+      });
+
       // Successful, so send
-      return res.status(200).json(post_list);
+      return res.status(200).json(posts);
     });
 };
 

@@ -1,101 +1,22 @@
 import React from 'react';
-import styled from 'styled-components';
+import { Link } from 'react-router-dom'
+
+// Styled Components
+import { Card, SpeechBubble, CardFooter, Section, Icon, Name, CommentIcon, Number } from './PostStyles';
 
 // Placeholder post image
-import Dummy from '../images/placeholders/dummy.png'
-
-// Profile icons
-import Anonymous from '../images/userIcons/anonymous.svg'
-import Hobbyist from '../images/userIcons/hobbyist.png'
-import Professional from '../images/userIcons/professional.png'
-import Student from '../images/userIcons/student.png'
+import Dummy from '../images/placeholders/dummy.png';
 
 // Comment icon
-import Chat from '../images/utilityIcons/chat-right-text-fill.svg'
+import Chat from '../images/utilityIcons/chat-right-text-fill.svg';
 
-const Card = styled.div`
-  background-color: #3c545c;
-  flex: 1;
-  flex-basis: 18em;
-  border-radius: 10px;
-  cursor: pointer;
-`;
+// Helper functions
+import { decideIcon } from '../services/decideIcon';
 
-const SpeechBubble = styled.p`
-  text-align: center;
-  background: #FFF;
-  font-size: 0.9rem;
-  padding: 1.3em;
-  width: 100%;
-  position:relative;
-  border-radius: 10px;
-  ::before {
-    content: "";
-    width: 0px;
-    height: 0px;
-    position: absolute;
-    border-left: 10px solid #FFF;
-    border-right: 10px solid transparent;
-    border-top: 10px solid #FFF;
-    border-bottom: 10px solid transparent;
-    left: 32px;
-    bottom: -15px;
-  }
-`;
+const Post = ({ post }) => {
 
-const CardFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-`;
-
-const Section = styled.div`
-  display: flex;
-  align-items: flex-start;
-  align-content: flex-start;
-`;
-
-const Icon = styled.div`
-  display: inline-block;
-  width: 2.5em;
-  height: 2.5em;
-  border-radius: 50%;
-  background-color: white;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-
-  /* Adjust background-image with icon.type prop */
-  background-image: url(${props => props.icon.type});
-`;
-
-const Name = styled.div`
-  font-size: 1.3rem;
-  color: white;
-  margin-left: 5px;
-  align-self: center;
-`;
-
-const CommentIcon = styled.div`
-  width: 2.5em;
-  height: 2.5em;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  filter: invert(100%) sepia(5%) saturate(7500%) hue-rotate(188deg) brightness(113%) contrast(90%);
-  align-self: flex-end;
-
-  /* Adjust background-image with icon.type prop */
-  background-image: url(${props => props.icon.type});
-`;
-
-const Number = styled.div`
-  font-size: 1.5rem;
-  color: white;
-  margin-left: 5px;
-  align-self: flex-start;
-`;
-
-const Post = (post) => {
+  const icon = decideIcon(post.poster.icon);
+  
   return (
     <Card key={post._id} className="p-2 m-3">
       <img className="card-img-top" src={Dummy} alt="dummy" />
@@ -103,8 +24,8 @@ const Post = (post) => {
         <SpeechBubble>{post.title}</SpeechBubble>
         <CardFooter>
           <Section>
-            <Icon icon={{ type: Anonymous }} />
-            <Name>Polvyer</Name>
+            <Icon icon={{ type: icon }} />
+            <Link to={`/users/${post.poster._id}`}><Name>{post.poster.owner}</Name></Link>
           </Section>
           <Section>
             <CommentIcon icon={{ type: Chat }} />

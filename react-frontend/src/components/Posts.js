@@ -1,28 +1,12 @@
-import React, { useContext, useEffect } from 'react'
-import styled from 'styled-components'
-
-// Context
-import { UserContext } from '../context/UserContext'
+import React from 'react';
 
 // Components
-import Post from './Post'
+import Post from './Post';
 
-const Deck = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  width: 80%;
-`;
+// Styled Components
+import { Deck } from './PostStyles';
 
 const Posts = ({ posts }) => {
-
-  const { user, setUser, setNavTitle } = useContext(UserContext);
-
-  // Changes navbar title
-  useEffect(() => {
-    setNavTitle('Home');
-  }, [setNavTitle]);
 
   return (
     <Deck className="mx-auto my-5">
