@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import styled from "styled-components";
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 
 // Context Provider
 import { UserContext } from '../context/UserContext';
@@ -9,12 +9,6 @@ import { UserContext } from '../context/UserContext';
 // Components
 import Posts from './Posts';
 import Info from './Info';
-
-// Icons
-import Anonymous from '../images/userIcons/anonymous.svg';
-import Hobbyist from '../images/userIcons/hobbyist.png';
-import Professional from '../images/userIcons/professional.png';
-import Student from '../images/userIcons/student.png';
 
 const Paragraph = styled.p`
   width: 80%;
@@ -32,10 +26,13 @@ const Portfolio = () => {
   const [ data, setData ] = useState({ posts: [] });
 
   // Context
-  const { user, setUser, setNavTitle } = useContext(UserContext);
+  const { user, setNavTitle } = useContext(UserContext);
 
-  // URI parameters
+  // URI parameters (/users/:userid)
   const { userid } = useParams();
+
+  // Used to redirect to Not Found for when profile doesn't exist
+  const history = useHistory();
 
   // Changes navbar title
   useEffect(() => {
@@ -54,14 +51,17 @@ const Portfolio = () => {
         const response = await axios.get(`http://localhost:5000/users/${userid}`, { withCredentials: true });
         setData(response.data);
       } catch(err) {
-        console.log(err);
+        // No user found, redirect to Not Found
+        history.push('/404.html');
       }
     };
     fetchPosts();
-  }, [userid]);
+  }, [userid, history]);
 
   // Extract posts and info
   const { posts, ...info } = data
+
+  console.log(posts);
 
   return (
     <div id="container">

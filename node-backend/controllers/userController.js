@@ -1,6 +1,8 @@
 const { body } = require('express-validator');
 const async = require('async');
 const bcrypt = require('bcryptjs');
+
+// Helper functions
 const generateToken = require('../config/generateToken');
 
 // Models
@@ -92,8 +94,12 @@ exports.user_register = [
           newPortfolio.save(async function(err) {
             if (err) { return next(err); }
 
-            // Generate a new JWT token
-            await generateToken(res, newPortfolio._id);
+            try {
+              // Generate a new JWT token
+              await generateToken(res, newPortfolio._id);
+            } catch(err) {
+              return next(err);
+            }
 
             // Construct user
             const user = {
@@ -124,19 +130,45 @@ exports.user_detail = function(req, res, next) {
     // Get all posts made by user
     posts: function(callback) {
       Post.find({ "poster": req.params.userid })
-        .populate('poster')
         .populate('image')
+        .populate({
+          path: 'poster',
+          model: 'Portfolio',
+          populate: {
+            path: 'owner',
+            model: 'User',
+          }
+        })
         .exec(callback)
     }
   }, function(err, results) {
     if (err) { return next(err); }
+
+    // Modify post list to liking
+    const posts = results.posts.map(post => {
+      const poster = {
+        _id: post.poster._id,
+        icon: post.poster.icon,
+        owner: post.poster.owner.username,
+      };
+      return {
+        art_type: post.art_type,
+        date_posted: post.date_posted,
+        hashtags: post.hashtags,
+        image: post.image,
+        poster: poster,
+        private: post.private,
+        summary: post.summary,
+        title: post.title,
+      };
+    });
 
     // Construct user
     const user = {
       "_id": results.portfolio._id,
       "owner": results.portfolio.owner.username,
       "icon": results.portfolio.icon,
-      "posts": results.posts,
+      "posts": posts,
     };
 
     // Add biography if it exists

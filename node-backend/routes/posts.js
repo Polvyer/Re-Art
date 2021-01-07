@@ -11,7 +11,7 @@ const post_controller = require('../controllers/postController');
 router.get('/', post_controller.post_list);
 
 // POST request for creating Post
-router.post('/', verifyToken, post_controller.post_create);
+router.post('/', post_controller.post_create);
 
 // GET request for one Post
 router.get('/:postid', post_controller.post_detail);

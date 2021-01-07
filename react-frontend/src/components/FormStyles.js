@@ -12,7 +12,7 @@ const FormContainer = styled.div`
     width: 250px;
   }
   margin: 0 auto;
-  padding: 30px 0;
+  padding: 0 0;
   border-radius: 10px;
   color: #fff;
   form {

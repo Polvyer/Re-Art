@@ -1,5 +1,7 @@
 const passport = require('passport');
 const bcrypt = require('bcryptjs');
+
+// Strategies
 const LocalStrategy = require('passport-local').Strategy;
 const JWTStrategy = require('passport-jwt').Strategy;
 
@@ -21,15 +23,14 @@ const cookieExtractor = function(req) {
 passport.use(
   new LocalStrategy((username, password, done) => {
     User.findOne({ username }, (err, user) => {
-        if (err) {
-          return done(err);
-        }
+        if (err) { return done(err); }
         if (!user) {
           // Username does not exist
           return done(null, false, { message: 'Username does not exist' });
         }
         // Compare hashed passwords
         bcrypt.compare(password, user.password, (err, res) => {
+          if (err) { return done(err); }
           if (res) {
             // Passwords match
             return done(null, user, { message: 'Logged in successfully' });

@@ -8,6 +8,8 @@ import Home from './Home';
 import Signup from './Signup';
 import Login from './Login';
 import Portfolio from './Portfolio';
+import Upload from './Upload';
+import NotFound from './NotFound';
 
 // Context Provider
 import { UserContext } from '../context/UserContext';
@@ -16,9 +18,9 @@ const Routes = () => {
 
   // Context State
   const [ user, setUser ] = useState(null);
+  const [ navTitle, setNavTitle ] = useState('');
 
   // State
-  const [ navTitle, setNavTitle ] = useState('');
   const [ sidebarActive, setSidebarActive ] = useState(false);
 
   // value only changes if dependency array [...] changes (used with Context)
@@ -29,16 +31,20 @@ const Routes = () => {
     setSidebarActive(!sidebarActive);
   };
 
-  // GET request to /session (to verify token)
+  // Verify token / get user credentials
   useEffect(() => {
     async function checkIfLoggedIn() {
       try {
         // withCredentials indicates whether or not cross-site Access-Control requests should be made using credentials
+        // GET request to /session
         const response = await axios.get('http://localhost:5000/session',  { withCredentials: true });
 
+        // Check if status is 200
         if (response.status === 200) {
           // Set user globally
-          setUser(response.data);
+          setUser(response.data); // { _id, owner (username), icon, avatar, biography }
+        } else {
+          console.log('Status: ', response.status);
         }
       } catch(error) {
         // User is not logged in / token or cookie expired
@@ -48,6 +54,7 @@ const Routes = () => {
     checkIfLoggedIn();
   }, []);
 
+  // TO-DO: restructure this based on whether user is logged in
   return (
     <BrowserRouter>
       <Navbar toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} user={user} navTitle={navTitle} />
@@ -56,10 +63,12 @@ const Routes = () => {
           <Route exact path='/'>
             <Redirect to='/posts' />
           </Route>
+          <Route path='/posts/new' component={Upload} />
           <Route path='/posts' render={(props) => <Home {...props} setSidebarActive={setSidebarActive} sidebarActive={sidebarActive} />} />
           <Route path='/session/new' component={Login} />
           <Route path='/users/new' component={Signup} />
           <Route path='/users/:userid' component={Portfolio} />
+          <Route component={NotFound} />
         </Switch>
       </UserContext.Provider>
     </BrowserRouter>

@@ -6,7 +6,7 @@ import { Link, useHistory } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 
 // Styled Components
-import FormStyles from './FormStyles';
+import FormContainer from './FormStyles';
 
 const Signup = () => {
 
@@ -31,9 +31,9 @@ const Signup = () => {
   // Scrolls user up to errors
   useEffect(() => {
     if ((errors.length > 0) && errorRef.current) {
-      errorRef.current.scrollIntoView({ behavior: 'smooth' });
+      errorRef.current.scrollIntoView({ behavior: 'smooth' }); // Smooth is clean
     }
-  }, [errors])
+  }, [errors]);
 
   // Changes the navbar title
   useEffect(() => {
@@ -48,7 +48,7 @@ const Signup = () => {
     });
   };
 
-  // POST request to /users
+  // Form validation and submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -59,32 +59,30 @@ const Signup = () => {
     }
 
     try {
-      // POST to /users
+      // POST request to /users
       const response = await axios.post('http://localhost:5000/users', formValues, { withCredentials: true });
 
       if (response.status === 200) {
         // Set user globally
-        setUser(response.data);
+        setUser(response.data); // { _id (portfolio), owner (username), icon }
 
         // Redirect to user's portfolio
         history.push(`/users/${response.data._id}`);
+      } else {
+        // Something other than 200 got returned, but it's not an 'error'
+        setErrors([`${response.status}. That's an error.`]);
       }
     } catch(error) {
-      if (error.response) {
-        // Set errors for React to render
+      if (error.response) { // Errors were sent from server purposefully
         setErrors(error.response.data)
-
-        /* Log errors (for axios)
-        console.log(error.response.data);
-        console.log(error.response.status);
-        console.log(error.response.headers);
-        */
+      } else { // Server down possibly
+        setErrors(['Oops! Something went wrong, please try again.']);
       }
     }
   };
 
   return (
-    <FormStyles className="signup-form">
+    <FormContainer className="signup-form my-5 pt-3">
       {errors.length > 0 ? errors.map((error, index) => <div ref={index.toString() === '0' ? errorRef : undefined} key={index} className="alert alert-danger">{error}</div>) : null}
       <form onSubmit={handleSubmit}>
 		    <h2>Sign Up</h2>
@@ -149,7 +147,7 @@ const Signup = () => {
       <div className="text-center">
         Already have an account? <Link to="/session/new">Login here</Link>
       </div>
-    </FormStyles>
+    </FormContainer>
   );
 };
 

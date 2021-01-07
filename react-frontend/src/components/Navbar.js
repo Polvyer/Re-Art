@@ -50,7 +50,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
 
   const loggedInIcons = [
     { href: "/", src: house_door_fill, alt: "Home" },
-    { href: "/users/new", src: file_earmark_arrow_up_fill, alt: "post" },
+    { href: "/posts/new", src: file_earmark_arrow_up_fill, alt: "Upload Your Image" },
     { href: `/users/${user ? user._id : null}`, src: person_circle, alt: "Your Portfolio" },
     { href: "/", src: bell_fill, alt: "notifications" },
     { href: "/", src: three_dots_vertical, alt: "more" },

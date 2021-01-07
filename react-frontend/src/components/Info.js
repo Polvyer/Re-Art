@@ -20,6 +20,7 @@ const Avatar = styled.img`
   width: 15em;
   display: block;
   margin: 0 auto;
+  margin-bottom: 3px;
 `;
 
 const TextContainer = styled.div`

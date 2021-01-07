@@ -1,9 +1,41 @@
+const { body, validationResult } = require('express-validator');
+const multer = require('multer');
+const verifyToken = require('../config/verifyToken');
+
+// Models
 const User = require('../models/user');
 const Post = require('../models/post');
 const Portfolio = require('../models/portfolio');
 const Comment = require('../models/comment');
 const Image = require('../models/image');
-const { body, validationResult } = require('express-validator');
+
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, './uploads/');
+  },
+  filename: function(req, file, cb) {
+    cb(null, Date.now() + file.originalname);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    console.log('All Good')
+    cb(null, true);
+  } else {
+    console.log('Reject');
+    // rejects storing a file
+    cb(null, false);
+  }
+}
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 1024 * 1024 * 5
+  },
+  fileFilter: fileFilter
+});
 
 // Send list of all Posts
 exports.post_list = function(req, res, next) {
@@ -47,30 +79,40 @@ exports.post_list = function(req, res, next) {
 };
 
 // Handle Post create
-exports.post_create = function(req, res, next) {
-  // Create a Post object
-  const post = new Post(
-    {
-      title: req.body.title,
-      summary: req.body.summary,
-      art_type: req.body.art_type,
-      hashtags: req.body.hashtags,
-      private: req.body.private,
-      date_posted: Date.now(),
-      poster: req.user.id, // From verify token
-      image: req.body.image,
-    }
-  );
+exports.post_create = [
 
-  console.log(post)
+  verifyToken,
 
-  // Save Post
-  post.save(function(err) {
-    if (err) { return res.status(500).json(err.toString()); }
-    // Successful
-    return res.status(200).json(post);
-  });
-};
+  // Stores image in uploads folder using
+  // multer and creates a reference to the file
+  upload.single('imageData'),
+  
+  function(req, res, next) {
+    return res.status(200).json('Upload successful');
+    // Create a Post object
+    const post = new Post(
+      {
+        title: req.body.title,
+        summary: req.body.summary,
+        art_type: req.body.art_type,
+        hashtags: req.body.hashtags,
+        private: req.body.private,
+        date_posted: Date.now(),
+        poster: req.user.id, // From verify token
+        image: req.body.image,
+      }
+    );
+
+    console.log(post)
+
+    // Save Post
+    post.save(function(err) {
+      if (err) { return res.status(500).json(err.toString()); }
+      // Successful
+      return res.status(200).json(post);
+    });
+  }
+]
 
 // Send details for a specific Post
 exports.post_detail = function(req, res, next) {

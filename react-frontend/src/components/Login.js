@@ -6,7 +6,7 @@ import { Link, useHistory } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 
 // Styled Components
-import FormStyles from './FormStyles';
+import FormContainer from './FormStyles';
 
 const Login = () => {
 
@@ -39,37 +39,35 @@ const Login = () => {
     });
   };
 
-  // POST request to /session
+  // Form validation and submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // POST to /session
+      // POST request to /session
       const response = await axios.post('http://localhost:5000/session', formValues, { withCredentials: true });
 
       if (response.status === 200) {
         // Set user globally
-        setUser(response.data);
+        setUser(response.data); // { _id (portfolio), owner (username), icon, biography, avatar }
 
         // Redirect to user's portfolio
         history.push(`/users/${response.data._id}`);
+      } else {
+        // Something other than 200 got returned, but it's not an 'error'
+        setErrors([`${response.status}. That's an error.`]);
       }
     } catch(error) {
-      if (error.response) {
-        // Set errors for React to render
+      if (error.response) { // Errors were sent from server purposefully
         setErrors(error.response.data)
-
-        /* Log errors (for axios)
-        console.log(error.response.data);
-        console.log(error.response.status);
-        console.log(error.response.headers);
-        */
+      } else { // Server down possibly
+        setErrors(['Oops! Something went wrong, please try again.']);
       }
     }
   };
 
   return (
-    <FormStyles className="signup-form">
+    <FormContainer className="signup-form my-5 pt-3">
       {errors.length > 0 ? errors.map((error, index) => <div ref={index.toString() === '0' ? errorRef : undefined} key={index} className="alert alert-danger">{error}</div>) : null}
       <form onSubmit={handleSubmit}>
 		    <h2>Login</h2>
@@ -104,7 +102,7 @@ const Login = () => {
       <div className="text-center">
         Not a member? <Link to="/users/new">Signup now</Link>
       </div>
-    </FormStyles>
+    </FormContainer>
   );
 };
 
