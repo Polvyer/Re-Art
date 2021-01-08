@@ -17,10 +17,15 @@ const InfoContainer = styled.div`
 `;
 
 const Avatar = styled.img`
-  width: 15em;
   display: block;
   margin: 0 auto;
   margin-bottom: 3px;
+  max-width: 40%;
+  height: auto;
+
+  @media screen and (max-width: 700px) {
+    max-width: 80%;
+  }
 `;
 
 const TextContainer = styled.div`
@@ -81,7 +86,7 @@ const Info = ({ info }) => {
   return (
     <InfoContainer className="px-3 mt-5 py-3">
       <div>
-        <Avatar src={Picture} alt="Avatar" />
+        <Avatar className="img-fluid" src={Picture} alt="Avatar" />
         <TextContainer>
           <div className="username">@{info.owner}</div>
           <div>

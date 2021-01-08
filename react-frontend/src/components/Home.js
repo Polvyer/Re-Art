@@ -16,7 +16,7 @@ import Hobbyist from '../images/userIcons/hobbyist.png';
 import Professional from '../images/userIcons/professional.png';
 import Student from '../images/userIcons/student.png';
 
-const Main = styled.main`
+const MainContainer = styled.main`
   display: flex;
   width: 100%;
   position: relative;
@@ -120,10 +120,10 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
       )
     }
     return (
-      <Main>
+      <MainContainer>
         {sidebarActive ? <Sidebar artTypes={artTypeFilters} setArtTypes={setArtTypes} icons={iconFilters} setIcons={setIcons} hashtag={hashtagFilter} setHashtag={setHashtag} /> : null}
         <Posts posts={posts} />
-      </Main>
+      </MainContainer>
     );
   };
 

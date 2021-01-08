@@ -19,6 +19,7 @@ const Nav = styled.nav`
     rgba(4, 4, 4, 1),
     rgba(28, 24, 52, 1)
   );
+  width: 100%;
 `;
 
 const Search = styled.div`

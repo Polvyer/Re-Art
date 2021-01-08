@@ -1,24 +1,19 @@
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, useRef } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
+
+// Components
+import Input from './Input';
+import Feedback from './Feedback';
 
 // Context
 import { UserContext } from '../context/UserContext';
 
-const CustomInput = styled.label`
-  display: block;
-  height: 100px;
-  width: 100px;
-  background-color: grey;
-  color: white;
-  font-weight: 900;
-  font-size: 2rem;
-  text-align: center;
-  cursor: pointer;
-`;
-
-const HiddenInput = styled.input`
-  display: none;
+const MainContainer = styled.main`
+  /* Flex Parent */
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
 `;
 
 const Upload = () => {
@@ -28,9 +23,13 @@ const Upload = () => {
     file: null,
     url: null,
   });
+  const [ showRemoveButton, setShowRemoveButton ] = useState(false);
 
   // Context
   const { setNavTitle } = useContext(UserContext);
+
+  // Used to allow us to call scrollIntoView
+  const imageRef = useRef(null);
 
   // Changes the navbar title
   useEffect(() => {
@@ -49,11 +48,34 @@ const Upload = () => {
       if (image.url) { // imageFile !== null (avoid memory issues)
         URL.revokeObjectURL(image.url);
       }
+
       setImage({
         file: e.target.files[0],
         url: URL.createObjectURL(e.target.files[0])
       });
+      if (imageRef.current) {
+        imageRef.current.scrollIntoView({ behavior: 'smooth' }); // Smooth is clean
+      }
+
+      // Remove button is now accessible
+      setShowRemoveButton(true);
     }
+  };
+
+  // Removes current image uploaded
+  const removeFile = () => {
+    if (image.url) { // imageFile !== null (avoid memory issues)
+      URL.revokeObjectURL(image.url);
+    }
+
+    // Image is now null
+    setImage({
+      file: null,
+      url: null,
+    });
+
+    // Remove button is now inaccessible
+    setShowRemoveButton(false);
   };
 
   const send = () => {
@@ -74,15 +96,10 @@ const Upload = () => {
   }
 
   return (
-    <div>
-      Upload
-      <CustomInput htmlFor="file-upload" className="custom-file-upload">
-        <HiddenInput id="file-upload" type="file" onChange={changeImage} />
-        +
-      </CustomInput>
-      <img src={image.url} alt="X" />
-      <button onClick={send}>Upload</button>
-    </div>
+    <MainContainer>
+      <Input changeImage={changeImage} />
+      <Feedback imageRef={imageRef} image={image} showRemoveButton={showRemoveButton} removeFile={removeFile} />
+    </MainContainer>
   );
 };
 
