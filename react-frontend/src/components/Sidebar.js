@@ -7,7 +7,7 @@ const SideForm = styled.form`
   width: 250px;
   top: 0;
   bottom: 0;
-  min-height: 86vh;
+  height: 86vh;
   transition: all 0.3s;
   border: 5px solid rgba(92, 92, 92, 1);
   font-size: 1.2rem;

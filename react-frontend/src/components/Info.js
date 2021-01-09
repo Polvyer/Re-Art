@@ -57,17 +57,17 @@ const EditButton = styled.button`
   margin: 0 auto;
   margin-top: 5px;
   height: 50px;
-  border-radius: 30px;
+  border-radius: 40px;
   background-color: #fca404;
   font-size: 1.5rem;
   color: white;
-  box-shadow: 0 0 2px black;
+  box-shadow: 0px 2px 5px black;
   :hover {
     transform: translateY(-3px);
   }
   :focus {
     outline: none;
-    box-shadow: 0 0 2px black;
+    box-shadow: 0px 2px 5px black;
   }
   :active {
     transform: translateY(-1px);

@@ -54,13 +54,44 @@ const HiddenInput = styled.input`
   display: none;
 `;
 
-const Input = ({ changeImage }) => {
-  return (
-    <InputContainer>
+const ImageContainer = styled.label`
+  /* Positioning */
+  margin: 20px;
+  height: 220px;
+  width: 250px;
+
+  /* Flex Parent */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Image = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+`;
+
+const Input = ({ changeImage, showFeedback, showFinalizePost, image }) => {
+
+  const showContent = () => {
+    if (showFeedback || showFinalizePost) {
+      return (
+        <ImageContainer>
+          <Image className="img-fluid" src={image.url} alt="Responsive image" />;
+        </ImageContainer>
+      );
+    }
+    return (
       <CustomInput htmlFor="file-upload" className="custom-file-upload">
         <HiddenInput id="file-upload" type="file" onChange={changeImage} />
         +
       </CustomInput>
+    );
+  }
+
+  return (
+    <InputContainer>
+      {showContent()}
     </InputContainer>
   )
 }

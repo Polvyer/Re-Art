@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const generateToken = (res, id) => {
 
   // Set cookie expiration
-  const expiration = process.env.NODE_ENV === 'development' ? 3600000 : 604800000; // in ms (1 hour === 3600000 ms)
+  const expiration = process.env.NODE_ENV === 'development' ? 7200000 : 604800000; // in ms (2 hours === 7200000 ms)
 
   // Sign token with portfolio id (for minimum payload)
   const token = jwt.sign({ id }, process.env.JWT_SECRET, {

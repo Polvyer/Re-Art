@@ -39,9 +39,13 @@ const Portfolio = () => {
     if (user && user._id === userid) {
       setNavTitle('Your Portfolio');
     } else {
-      setNavTitle('Portfolio');
+      if (data.owner) {
+        setNavTitle(`${data.owner}'s Portfolio`);
+      } else {
+        setNavTitle('Not Found');
+      }
     }
-  }, [user, userid, setNavTitle]);
+  }, [user, userid, setNavTitle, data.owner]);
 
   // Get list of user's posts from the database
   useEffect(() => {

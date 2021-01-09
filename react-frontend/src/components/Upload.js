@@ -4,7 +4,9 @@ import axios from 'axios';
 
 // Components
 import Input from './Input';
+import JumboImage from './JumboImage';
 import Feedback from './Feedback';
+import FinalizePost from './FinalizePost';
 
 // Context
 import { UserContext } from '../context/UserContext';
@@ -24,17 +26,34 @@ const Upload = () => {
     url: null,
   });
   const [ showRemoveButton, setShowRemoveButton ] = useState(false);
+  const [ showFeedback, setShowFeedback ] = useState(false);
+  const [ showFinalizePost, setShowFinalizePost ] = useState(false);
+  // missing image (from above), poster (from context), and date_posted (done in backend)
+  const [ formFields, setFormFields ] = useState({
+    title: '',
+    summary: '',
+    art_type: 'Drawing',
+    hashtags: '',
+    private: false,
+  });
+
+  // Mounts Feedback and Unmounts FinalizePost
+  const mountFeedback = () => {
+    setShowFeedback(true);
+    setShowFinalizePost(false);
+  };
+
+  // Mounts FinalizePost and Unmounts Feedback
+  const mountFinalizePost = () => {
+    setShowFeedback(false);
+    setShowFinalizePost(true);
+  };
 
   // Context
-  const { setNavTitle } = useContext(UserContext);
+  const { user } = useContext(UserContext);
 
   // Used to allow us to call scrollIntoView
   const imageRef = useRef(null);
-
-  // Changes the navbar title
-  useEffect(() => {
-    setNavTitle('Upload Your Image');
-  }, [setNavTitle]);
 
   // Handles image upload
   const changeImage = (e) => {
@@ -78,7 +97,26 @@ const Upload = () => {
     setShowRemoveButton(false);
   };
 
-  const send = () => {
+  // Alters form field state
+  const handleFormChanges = (e) => {
+    const newFormFields = {
+      ...formFields,
+      [e.target.name]: e.target.value,
+    }
+
+    // Convert 'private' field to boolean
+    if (e.target.name === 'private') {
+      if (newFormFields['private'] === 'true')
+        newFormFields['private'] = true;
+      else 
+        newFormFields['private'] = false;
+    }
+    
+    setFormFields(newFormFields);
+  };
+
+  // Create a new post (title, summary, art_type, hashtags, private, poster (id), image (handle this on server side))
+  const submit = () => {
     const formData = new FormData();
     formData.append('imageData', image.file);
     const config = {
@@ -93,12 +131,22 @@ const Upload = () => {
       }).catch(err => {
         console.log('Err: ', err.response);
       });
+  };
+
+  // Determines what type of content to show (Upload, Feedback, or Finalize)
+  const showContent = () => {
+    if (showFeedback) {
+      return <Feedback setShowFeedback={setShowFeedback} formFields={formFields} handleFormChanges={handleFormChanges} mountFinalizePost={mountFinalizePost} />
+    } else if (showFinalizePost) {
+      return <FinalizePost submit={submit} mountFeedback={mountFeedback} formFields={formFields} handleFormChanges={handleFormChanges} />
+    }
+    return <JumboImage setShowFeedback={setShowFeedback} imageRef={imageRef} image={image} showRemoveButton={showRemoveButton} removeFile={removeFile} />
   }
 
   return (
     <MainContainer>
-      <Input changeImage={changeImage} />
-      <Feedback imageRef={imageRef} image={image} showRemoveButton={showRemoveButton} removeFile={removeFile} />
+      <Input image={image} changeImage={changeImage} showFeedback={showFeedback} showFinalizePost={showFinalizePost} />
+      {showContent()}
     </MainContainer>
   );
 };

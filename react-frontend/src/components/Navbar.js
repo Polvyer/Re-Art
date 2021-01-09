@@ -51,7 +51,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
 
   const loggedInIcons = [
     { href: "/", src: house_door_fill, alt: "Home" },
-    { href: "/posts/new", src: file_earmark_arrow_up_fill, alt: "Upload Your Image" },
+    { href: "/posts/new", src: file_earmark_arrow_up_fill, alt: "Upload Your Image, Ask For Feedback, Finalize Your Post" },
     { href: `/users/${user ? user._id : null}`, src: person_circle, alt: "Your Portfolio" },
     { href: "/", src: bell_fill, alt: "notifications" },
     { href: "/", src: three_dots_vertical, alt: "more" },
@@ -84,7 +84,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
         {icons.map(icon => {
           return (
             <Link key={icon.alt} to={icon.href} className="navbar-brand">
-              {navTitle === icon.alt ? <ActiveIcon src={icon.src} alt={icon.alt} /> : <Icon src={icon.src} alt={icon.alt} />}
+              {icon.alt.includes(navTitle) ? <ActiveIcon src={icon.src} alt={icon.alt} /> : <Icon src={icon.src} alt={icon.alt} />}
             </Link>
           );
         })}
