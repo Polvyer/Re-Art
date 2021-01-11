@@ -3,10 +3,10 @@ import axios from 'axios';
 import { Link, useHistory } from 'react-router-dom';
 
 // Context
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../context/UserContext';
 
-// Styled Components
-import FormContainer from './FormStyles';
+// Styles
+import FormContainer from './Styles';
 
 const Signup = () => {
 
@@ -137,7 +137,7 @@ const Signup = () => {
         </div>
         <div className="form-group">
           <label className="form-check-label">
-            <input type="checkbox" required="required" /> I accept the <a href="#">Terms of Use</a> &amp; <a href="#">Privacy Policy</a>
+            <input type="checkbox" required="required" /> I accept the <Link className="terms-of-use" to="#">Terms of Use</Link> &amp; <Link className="privacy-policy" to="#">Privacy Policy</Link>
           </label>
         </div>
         <div className="form-group">

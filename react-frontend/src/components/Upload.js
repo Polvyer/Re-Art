@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
+import { useHistory } from 'react-router-dom';
 
 // Components
 import Input from './Input';
@@ -28,7 +29,6 @@ const Upload = () => {
   const [ showRemoveButton, setShowRemoveButton ] = useState(false);
   const [ showFeedback, setShowFeedback ] = useState(false);
   const [ showFinalizePost, setShowFinalizePost ] = useState(false);
-  // missing image (from above), poster (from context), and date_posted (done in backend)
   const [ formFields, setFormFields ] = useState({
     title: '',
     summary: '',
@@ -36,6 +36,36 @@ const Upload = () => {
     hashtags: '',
     private: false,
   });
+
+  // Context
+  const { setUser } = useContext(UserContext);
+
+  // Used to redirect when user signs up successfully
+  const history = useHistory();
+
+  // Used to allow us to call scrollIntoView
+  const imageRef = useRef(null);
+
+  // Verify token
+  useEffect(() => {
+    async function checkIfLoggedIn() {
+      try {
+        // withCredentials indicates whether or not cross-site Access-Control requests should be made using credentials
+        // GET request to /session
+        await axios.get('http://localhost:5000/session',  { withCredentials: true });
+      } catch(error) {
+        // User is not logged in / token or cookie expired
+        if (error.response) {
+          // Make user null
+          setUser(null);
+
+          // Redirect to login
+          history.push('/session/new');
+        }
+      }
+    }
+    checkIfLoggedIn();
+  }, [history, setUser]);
 
   // Mounts Feedback and Unmounts FinalizePost
   const mountFeedback = () => {
@@ -48,12 +78,6 @@ const Upload = () => {
     setShowFeedback(false);
     setShowFinalizePost(true);
   };
-
-  // Context
-  const { user } = useContext(UserContext);
-
-  // Used to allow us to call scrollIntoView
-  const imageRef = useRef(null);
 
   // Handles image upload
   const changeImage = (e) => {
@@ -115,19 +139,33 @@ const Upload = () => {
     setFormFields(newFormFields);
   };
 
-  // Create a new post (title, summary, art_type, hashtags, private, poster (id), image (handle this on server side))
+  // Create a new post (title, summary, art_type, hashtags, private, poster (portfolio id), image and date_posted and numberOfComments (handle this on server side))
   const submit = () => {
+    // Append all form data
     const formData = new FormData();
-    formData.append('imageData', image.file);
+    formData.append('title', formFields.title);
+    formData.append('summary', formFields.summary);
+    formData.append('art_type', formFields.art_type);
+    formData.append('hashtags', formFields.hashtags);
+    formData.append('private', formFields.private); // Boolean
+    formData.append('file', image.file); // Image file
+
+    // Axios configs
     const config = {
       withCredentials: true,
       headers: {
         'content-type': 'multipart/form-data',
       }
-    }
+    };
+
+    // POST request to /posts
     axios.post('http://localhost:5000/posts', formData, config)
       .then(response => {
         console.log('Response: ', response);
+
+        // Redirect to /posts
+        history.push('/posts');
+
       }).catch(err => {
         console.log('Err: ', err.response);
       });

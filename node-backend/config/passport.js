@@ -10,15 +10,6 @@ const User = require('../models/user');
 const Portfolio = require('../models/portfolio');
 const Image = require('../models/image');
 
-// Extract token from cookie
-const cookieExtractor = function(req) {
-  let token = null;
-  if (req && req.cookies) {
-    token = req.cookies['token'];
-  }
-  return token;
-}
-
 // Authenticate user
 passport.use(
   new LocalStrategy((username, password, done) => {
@@ -29,10 +20,10 @@ passport.use(
           return done(null, false, { message: 'Username does not exist' });
         }
         // Compare hashed passwords
-        bcrypt.compare(password, user.password, (err, res) => {
+        bcrypt.compare(password, user.password, (err, res) => { // res => true or false
           if (err) { return done(err); }
           if (res) {
-            // Passwords match
+            // Passwords match (user => _id, username, password, email)
             return done(null, user, { message: 'Logged in successfully' });
           } else {
             // Passwords do not match
@@ -42,6 +33,15 @@ passport.use(
       });
   })
 );
+
+// Extract token from cookie
+const cookieExtractor = function(req) {
+  let token = null;
+  if (req && req.cookies) {
+    token = req.cookies['token'];
+  }
+  return token;
+}
 
 // Verify user
 passport.use(

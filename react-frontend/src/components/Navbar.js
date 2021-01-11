@@ -10,7 +10,7 @@ import house_door_fill from '../images/navIcons/house-door-fill.svg'
 import file_earmark_arrow_up_fill from '../images/navIcons/file-earmark-arrow-up-fill.svg'
 import person_circle from '../images/navIcons/person-circle.svg'
 import bell_fill from '../images/navIcons/bell-fill.svg'
-import three_dots_vertical from '../images/navIcons/three-dots-vertical.svg'
+import box_arrow_right from '../images/navIcons/box-arrow-right.svg';
 
 const Nav = styled.nav`
   color: white;
@@ -47,18 +47,17 @@ const Title = styled.h4`
   font-weight: 400;
 `;
 
-const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
+const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle, setShowLogoutModal }) => {
 
   const loggedInIcons = [
-    { href: "/", src: house_door_fill, alt: "Home" },
+    { href: "/", src: house_door_fill, alt: "Home, Search Results" },
     { href: "/posts/new", src: file_earmark_arrow_up_fill, alt: "Upload Your Image, Ask For Feedback, Finalize Your Post" },
-    { href: `/users/${user ? user._id : null}`, src: person_circle, alt: "Your Portfolio" },
+    { href: `/users/${user ? user._id : null}`, src: person_circle, alt: "Your Portfolio, Editing Portfolio" },
     { href: "/", src: bell_fill, alt: "notifications" },
-    { href: "/", src: three_dots_vertical, alt: "more" },
   ];
 
   const loggedOutIcons = [
-    { href: "/", src: house_door_fill, alt: "Home" },
+    { href: "/", src: house_door_fill, alt: "Home, Search Results" },
     { href: "/session/new", src: person_circle, alt: "Login" },
     { href: "/users/new", src: person_plus_fill, alt: "Sign Up" },
   ];
@@ -68,7 +67,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
 
   // Determines whether to show search icon
   let searchClasses = "navbar-brand";
-  if (navTitle !== "Home") {
+  if ((navTitle !== "Home") && (navTitle !== "Search Results")) {
     searchClasses = "navbar-brand invisible";
   }
 
@@ -88,6 +87,10 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle }) => {
             </Link>
           );
         })}
+        {user ? 
+        <div role="button" className="navbar-brand">
+          <Icon onClick={setShowLogoutModal.bind(null, true)} src={box_arrow_right} alt="Logout" />
+        </div> : null }
       </div>
     </Nav>
   );

@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import styled from 'styled-components';
+import { useParams } from 'react-router-dom';
 
 // Default Avatar
-import DefaultAvatar from '../images/userIcons/avatar.svg';
-import Picture from '../images/placeholders/S1e3_mabel_new_wax_figure.png';
+import DefaultAvatar from '../images/userIcons/default.png';
 
 // Helper functions
 import { decideIcon } from '../services/decideIcon';
+
+// Context
+import { UserContext } from '../context/UserContext';
 
 const InfoContainer = styled.div`
   margin: 0 auto;
@@ -79,23 +82,46 @@ const EditIcon = styled.i`
   top: 2px;
 `;
 
-const Info = ({ info }) => {
+const Info = ({ owner, info, showEditButton, setShowEditInfo }) => {
 
+  // Context
+  const { user, setNavTitle } = useContext(UserContext);
+
+  // URI parameters (/users/:userid)
+  const { userid } = useParams();
+
+  // Changes navbar title
+  useEffect(() => {
+    if (user && user._id === userid) {
+      // User's portfolio
+      setNavTitle('Your Portfolio');
+    } else {
+      if (owner) { // data.owner => username
+        // Someone else's portfolio
+        setNavTitle(`${owner}'s Portfolio`);
+      } else {
+        // No one's portfolio
+        setNavTitle('Not Found');
+      }
+    }
+  }, [user, userid, setNavTitle, owner]);
+
+  // Get icon to display
   const icon = decideIcon(info.icon);
 
   return (
     <InfoContainer className="px-3 mt-5 py-3">
       <div>
-        <Avatar className="img-fluid" src={Picture} alt="Avatar" />
+        {showEditButton ? <Avatar className="img-fluid" src={(user.avatar && user.avatar.location) || DefaultAvatar} alt="Avatar" /> : <Avatar className="img-fluid" src={(info.avatar && info.avatar.location) || DefaultAvatar} alt="Avatar" />}
         <TextContainer>
           <div className="username">@{info.owner}</div>
           <div>
             <Icon src={icon}/><span className="icon"></span>
           </div>
-          {info.biography ? <div className="biography">Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis p</div> : <div>(Biography not given)</div>}
+          {(info.biography && info.biography.trim()) ? <div className="biography">{info.biography}</div> : <div>(Biography not given)</div>}
         </TextContainer>
       </div>
-      <EditButton className="btn"><EditIcon className="fa fa-pencil-square-o" aria-hidden="true"></EditIcon> Edit Info</EditButton>
+      {showEditButton ? <EditButton onClick={setShowEditInfo.bind(null, true)} className="btn"><EditIcon className="fa fa-pencil-square-o" aria-hidden="true"></EditIcon> Edit Info</EditButton> : null}
     </InfoContainer>
   )
 };

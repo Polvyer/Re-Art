@@ -7,8 +7,9 @@ import { UserContext } from '../context/UserContext';
 
 // Components
 import Sidebar from './Sidebar';
-import Posts from './Posts';
+import Posts from './Posts/Posts';
 import Error from './Error';
+import Spinner from './Spinner';
 
 // Filter Icons
 import Anonymous from '../images/userIcons/anonymous.svg';
@@ -25,6 +26,7 @@ const MainContainer = styled.main`
 const Home = ({ sidebarActive, setSidebarActive }) => {
 
   // State
+  const [ contentLoaded, setContentLoaded ] = useState(false);
   const [ errors, setErrors ] = useState([]);
   const [ posts, setPosts ] = useState([]);
   const [ hashtagFilter, setHashtagFilter ] = useState('');
@@ -74,6 +76,9 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
 
       // Check if status is 200
       if (response.status === 200) {
+        // Get rid of spinner
+        setContentLoaded(true);
+
         // Set user globally
         setPosts(response.data); // { _id, owner (username), icon, avatar, biography }
       } else {
@@ -89,24 +94,76 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
     }
   };
 
+  // Changes navbar title
+  useEffect(() => {
+    if (!artTypeFilters.every(e => !e.checked) || !iconFilters.every(e => !e.checked) || hashtagFilter) {
+      setNavTitle('Search Results');
+    } else {
+      setNavTitle('Home');
+    }
+  }, [artTypeFilters, iconFilters, hashtagFilter, setNavTitle])
+
   useEffect(() => {
     // componentDidMount
     fetchPosts();
 
-    // Changes navbar title
-    setNavTitle('Home');
-
-    // componentWillUnmount
+    // componentWillUnmount (cleanup)
     return () => {
       setSidebarActive(false);
+      setPosts([]);
+      setErrors([]);
     }
-  }, [setSidebarActive, setNavTitle]);
+  }, [setSidebarActive, setNavTitle, setPosts]);
 
   // Closes error
   const closeError = (index) => {
     const newErrors = [...errors];
     newErrors.splice(index, 1);
     setErrors(newErrors);
+  };
+
+  // Prepare to filter posts
+  let filteredPosts = [...posts];
+  // True if even one art type filter is checked
+  const applyArtTypeFilters = !artTypeFilters.every(e => !e.checked);
+  // True if even one icon filter is checked
+  const applyIconFilters = !iconFilters.every(e => !e.checked);
+  // True if hashtag filter has input
+  const applyHashtagFilter = hashtagFilter;
+  // If no filters are checked => don't filter!
+  if (applyArtTypeFilters || applyIconFilters || applyHashtagFilter) {
+    filteredPosts = posts.filter(post => {
+
+      // Check if at least one art_type filter is checked
+      if (applyArtTypeFilters) {
+        // Check if at least one art_type filter applies
+        if (!artTypeFilters.some(e => (e.checked && e.type === post.art_type))) {
+          // No art_type filter applies
+          return false;
+        }
+      }
+
+      // Check if at least one icon filter is checked
+      if (applyIconFilters) {
+        // Check if at least one icon filter applies
+        if (!iconFilters.some(e => (e.checked && e.type === post.poster.icon))) {
+          // No icon filter applies
+          return false;
+        }
+      }
+
+      // Check if there's any input in the hashtag filter
+      if (applyHashtagFilter) {
+        const hashtagArray = hashtagFilter.split(' ');
+        // Check if at least one hashtag filter applies
+        if (!hashtagArray.some(e => post.hashtags.includes(e))) {
+          // No hashtag filter applies
+          return false;
+        }
+      }
+
+      return true;
+    });
   }
 
   // Decides whether to generate errors or content
@@ -115,14 +172,13 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
       return (
         <div className="mt-2">
           {errors.map((error, index) => <Error key={index} closeError={closeError} error={error} index={index} errorRef={errorRef} />)}
-          <Posts posts={posts} />
         </div>
-      )
+      );
     }
     return (
       <MainContainer>
-        {sidebarActive ? <Sidebar artTypes={artTypeFilters} setArtTypes={setArtTypes} icons={iconFilters} setIcons={setIcons} hashtag={hashtagFilter} setHashtag={setHashtag} /> : null}
-        <Posts posts={posts} />
+        {(contentLoaded && sidebarActive) ? <Sidebar artTypes={artTypeFilters} setArtTypes={setArtTypes} icons={iconFilters} setIcons={setIcons} hashtag={hashtagFilter} setHashtag={setHashtag} /> : null}
+        { contentLoaded ? <Posts posts={filteredPosts} /> : <Spinner />}
       </MainContainer>
     );
   };

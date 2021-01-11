@@ -7,8 +7,9 @@ import { useParams, useHistory } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 
 // Components
-import Posts from './Posts';
+import Posts from './Posts/Posts';
 import Info from './Info';
+import EditInfo from './EditInfo/EditInfo';
 
 const Paragraph = styled.p`
   width: 80%;
@@ -24,28 +25,16 @@ const Portfolio = () => {
 
   // State
   const [ data, setData ] = useState({ posts: [] });
+  const [ showEditInfo, setShowEditInfo ] = useState(false);
 
   // Context
-  const { user, setNavTitle } = useContext(UserContext);
+  const { user } = useContext(UserContext);
 
   // URI parameters (/users/:userid)
   const { userid } = useParams();
 
   // Used to redirect to Not Found for when profile doesn't exist
   const history = useHistory();
-
-  // Changes navbar title
-  useEffect(() => {
-    if (user && user._id === userid) {
-      setNavTitle('Your Portfolio');
-    } else {
-      if (data.owner) {
-        setNavTitle(`${data.owner}'s Portfolio`);
-      } else {
-        setNavTitle('Not Found');
-      }
-    }
-  }, [user, userid, setNavTitle, data.owner]);
 
   // Get list of user's posts from the database
   useEffect(() => {
@@ -62,18 +51,30 @@ const Portfolio = () => {
     fetchPosts();
   }, [userid, history]);
 
+  const renderContent = () => {
+    if (showEditInfo) {
+      return <EditInfo data={data} setData={setData} info={info} userid={userid} setShowEditInfo={setShowEditInfo} />
+    }
+    return (
+      <div id="container">
+        <Info owner={data.owner} setShowEditInfo={setShowEditInfo} info={info} showEditButton={showEditButton} />
+        <Paragraph className="pl-3">Recent Posts</Paragraph>
+        <Posts posts={posts} />
+      </div>
+    );
+  };
+
   // Extract posts and info
   const { posts, ...info } = data
 
-  console.log(posts);
+  // If user is logged in and user's portfolio, display edit button
+  const showEditButton = (user && user._id === userid);
 
   return (
     <div id="container">
-      <Info info={info} />
-      <Paragraph className="pl-3">Recent Posts</Paragraph>
-      <Posts posts={posts} />
+      {renderContent()}
     </div>
-  )
+  );
 };
 
 export default Portfolio;

@@ -5,11 +5,12 @@ import axios from 'axios';
 // Components
 import Navbar from './Navbar';
 import Home from './Home';
-import Signup from './Signup';
-import Login from './Login';
+import Signup from './Authentication/Signup';
+import Login from './Authentication/Login';
 import Portfolio from './Portfolio';
 import Upload from './Upload';
 import NotFound from './NotFound';
+import LogoutModal from './LogoutModal';
 
 // Context Provider
 import { UserContext } from '../context/UserContext';
@@ -22,6 +23,7 @@ const Routes = () => {
 
   // State
   const [ sidebarActive, setSidebarActive ] = useState(false);
+  const [ showLogoutModal, setShowLogoutModal ] = useState(false);
 
   // value only changes if dependency array [...] changes (used with Context)
   const value = useMemo(() => ({ user, setUser, setNavTitle }), [user, setUser, setNavTitle]);
@@ -30,6 +32,32 @@ const Routes = () => {
   const toggleSidebar = () => {
     setSidebarActive(!sidebarActive);
   };
+
+  // Expire the 'token' cookie (since we can't expire jwt tokens on demand)
+  const logout = async (e) => {
+    try {
+      // DELETE request to /session
+      const response = await axios.delete('http://localhost:5000/session',  { withCredentials: true });
+      
+      if (response.status === 200) {
+        // Hide logout modal
+        setShowLogoutModal(false);
+
+        // Set user to null
+        setUser(null);
+
+        // Redirect to home page
+        window.location = 'http://localhost:3000/posts';
+      }
+    } catch(err) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          // User's session is already expired
+          window.location = 'http://localhost:3000/session/new';
+        }
+      }
+    }
+  }
 
   // Verify token / get user credentials
   useEffect(() => {
@@ -54,10 +82,10 @@ const Routes = () => {
     checkIfLoggedIn();
   }, []);
 
-  // TO-DO: restructure this based on whether user is logged in
   return (
     <BrowserRouter>
-      <Navbar toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} user={user} navTitle={navTitle} />
+      <Navbar setShowLogoutModal={setShowLogoutModal} toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} user={user} navTitle={navTitle} />
+      {showLogoutModal ? <LogoutModal logout={logout} setShowLogoutModal={setShowLogoutModal} /> : null}
       <UserContext.Provider value={value}>
         <Switch>
           <Route exact path='/'>

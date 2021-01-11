@@ -75,11 +75,11 @@ const Feedback = ({ setShowFeedback, formFields, handleFormChanges, mountFinaliz
       <FeedbackContainer className="pt-1">
         <FormGroup className="form-group">
           <label>Briefly summarize the feedback you want for this image</label>
-          <textarea className="form-control" rows="2" name="title" value={formFields.title} onChange={handleFormChanges}></textarea>
+          <textarea maxLength="50" className="form-control" rows="2" name="title" value={formFields.title} onChange={handleFormChanges}></textarea>
         </FormGroup>
         <FormGroup className="form-group">
           <label>Now, describe in detail what you want other artists to give you feedback on</label>
-          <textarea className="form-control" rows="6" name="summary" value={formFields.summary}  onChange={handleFormChanges}></textarea>
+          <textarea maxLength="1000" className="form-control" rows="6" name="summary" value={formFields.summary}  onChange={handleFormChanges}></textarea>
         </FormGroup>
       </FeedbackContainer>
       <ButtonContainer>
@@ -87,7 +87,7 @@ const Feedback = ({ setShowFeedback, formFields, handleFormChanges, mountFinaliz
         {(formFields.title && formFields.summary) ? <Button onClick={mountFinalizePost} className="btn btn-success">Next</Button> : <Button className="btn btn-success" disabled>Next</Button>}
       </ButtonContainer>
     </ContentContainer>
-  )
-}
+  );
+};
 
 export default Feedback;

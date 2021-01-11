@@ -3,10 +3,10 @@ import axios from 'axios';
 import { Link, useHistory } from 'react-router-dom';
 
 // Context
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../context/UserContext';
 
-// Styled Components
-import FormContainer from './FormStyles';
+// Styles
+import FormContainer from './Styles';
 
 const Login = () => {
 
@@ -51,8 +51,8 @@ const Login = () => {
         // Set user globally
         setUser(response.data); // { _id (portfolio), owner (username), icon, biography, avatar }
 
-        // Redirect to user's portfolio
-        history.push(`/users/${response.data._id}`);
+        // Redirect to home page
+        history.push(`/posts`);
       } else {
         // Something other than 200 got returned, but it's not an 'error'
         setErrors([`${response.status}. That's an error.`]);
@@ -93,7 +93,7 @@ const Login = () => {
           </div>
         </div>
         <div className="form-group">
-          <a href="#">Forgot Password?</a>
+          <Link className="forgot-password" to="#">Forgot Password?</Link>
         </div>
         <div className="form-group">
           <button type="submit" className="btn btn-primary btn-lg">Login</button>

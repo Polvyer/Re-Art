@@ -11,7 +11,8 @@ const PostSchema = new Schema(
     private: { type: Boolean, default: false, required: true },
     date_posted: { type: Date, default: Date.now, required: true },
     poster: { type: Schema.Types.ObjectId, ref: 'Portfolio', required: true },
-    image: { type: Schema.Types.ObjectId, ref: 'Image', required: true }
+    image: { type: Schema.Types.ObjectId, ref: 'Image', required: true },
+    numberOfComments: { type: Number, required: true, default: 0 }
   }
 );
 

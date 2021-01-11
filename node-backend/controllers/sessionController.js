@@ -1,6 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const { body } = require('express-validator');
 
@@ -12,7 +9,7 @@ const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
 const Image = require('../models/image');
 
-// Verify token -> get user's credentials
+// Verify token + Get user's credentials
 exports.session_check = function(req, res, next) {
   Portfolio.findById(req.portfolio._id)
     .populate('owner', 'username') // Only returns the username
@@ -52,7 +49,7 @@ exports.session_login = [
     passport.authenticate('local', { session: false }, function(err, user, { message }) {
       if (err) { return next(err); }
       if (!user) {
-        // Username does not exist OR incorrect password
+        // Either username does not exist or incorrect password
         return res.status(400).json([message]);
       }
 
@@ -99,7 +96,12 @@ exports.session_login = [
   }
 ];
 
-// Handle Logout request
-exports.session_logout = function(req, res, next) {
-  res.send('TODO: Logout request');
+// Verify token + Handle Logout request
+exports.session_logout = async function(req, res, next) {
+  try {
+    await res.clearCookie("token");
+    return res.status(200).json('Logged out successfully');
+  } catch(err) {
+    return next(err);
+  }
 };

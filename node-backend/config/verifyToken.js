@@ -7,12 +7,10 @@ const verifyToken = async (req, res, next) => {
   // Check the user's cookies for a cookie named token
   const token = req.cookies.token || '';
 
-  console.log("Cookies: ", req.cookies);
-
   try {
     if (!token) {
-      // User is not logged in
-      return res.status(401).json({ error: 'You need to login' });
+      // User's session expired
+      return res.status(401).json(['You need to login.']);
     }
 
     // Verify the token

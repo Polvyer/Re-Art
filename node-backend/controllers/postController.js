@@ -1,6 +1,9 @@
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const verifyToken = require('../config/verifyToken');
+var AWS = require('aws-sdk');
+
+require('dotenv').config();
 
 // Models
 const User = require('../models/user');
@@ -9,25 +12,20 @@ const Portfolio = require('../models/portfolio');
 const Comment = require('../models/comment');
 const Image = require('../models/image');
 
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, './uploads/');
-  },
-  filename: function(req, file, cb) {
-    cb(null, Date.now() + file.originalname);
-  }
-});
+// Multer ships with storage engines DiskStorage and MemoryStorage
+// And Multer adds a body object and a file or files object to the request object.
+// The body object contains the values of the text fields of the form,
+// the file or files object contains the files uploaded via the form.
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-    console.log('All Good')
     cb(null, true);
   } else {
-    console.log('Reject');
     // rejects storing a file
     cb(null, false);
   }
-}
+};
 
 const upload = multer({
   storage: storage,
@@ -65,11 +63,13 @@ exports.post_list = function(req, res, next) {
           art_type: post.art_type,
           date_posted: post.date_posted,
           hashtags: post.hashtags,
-          image: post.image,
-          poster: poster,
+          image: post.image.location, // Image URL
+          poster: poster, // _id (portfolio id), icon, owner (username)
           private: post.private,
           summary: post.summary,
           title: post.title,
+          numberOfComments: (post.numberOfComments || 0),
+          _id: post._id
         };
       });
 
@@ -85,10 +85,68 @@ exports.post_create = [
 
   // Stores image in uploads folder using
   // multer and creates a reference to the file
-  upload.single('imageData'),
+  // In upload.single("file") - the name inside the single-quote is the name of the field that is going to be uploaded.
+  upload.single('file'),
   
   function(req, res, next) {
-    return res.status(200).json('Upload successful');
+    const file = req.file;
+    const s3FileUrl = process.env.AWS_UPLOADED_FILE_URL_LINK;
+
+    // AWS credentials
+    let s3bucket = new AWS.S3({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      region: process.env.AWS_REGION
+    });
+
+    // Where you want to store your file
+    var params = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: Date.now() + file.originalname,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      ACL: "public-read"
+    };
+
+    // Upload to S3 bucket
+    s3bucket.upload(params, function(err, data) {
+      if (err) { return next(err); }
+
+      // Create a new image object
+      const newImage = new Image({
+        key: data.Key,
+        location: data.Location,
+        mimetype: file.mimetype,
+        size: file.size,
+        type: 'Post',
+      });
+
+      // Save new image
+      newImage.save(function(err) {
+        if (err) { return next(err); }
+
+        // Create a new post object
+        const newPost = new Post({
+          title: req.body.title,
+          summary: req.body.summary,
+          art_type: req.body.art_type,
+          hashtags: req.body.hashtags,
+          private: req.body.private,
+          poster: req.portfolio, // From verifyToken middleware
+          image: newImage._id, // id gets stored after save
+        });
+
+        // Save new post
+        newPost.save(function(err) {
+          if (err) { return next(err); }
+
+          // Return new post information
+          return res.status(200).json(newPost);
+        });
+      });
+    });
+
+    /*
     // Create a Post object
     const post = new Post(
       {
@@ -111,6 +169,7 @@ exports.post_create = [
       // Successful
       return res.status(200).json(post);
     });
+    */
   }
 ]
 

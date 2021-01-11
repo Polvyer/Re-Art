@@ -14,6 +14,6 @@ router.get('/', verifyToken, session_controller.session_check);
 router.post('/', session_controller.session_login);
 
 // DELETE logout request
-router.delete('/', session_controller.session_logout);
+router.delete('/', verifyToken, session_controller.session_logout);
 
 module.exports = router;

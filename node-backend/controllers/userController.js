@@ -1,6 +1,11 @@
 const { body } = require('express-validator');
 const async = require('async');
 const bcrypt = require('bcryptjs');
+const verifyToken = require('../config/verifyToken');
+const multer = require('multer');
+var AWS = require('aws-sdk');
+
+require('dotenv').config();
 
 // Helper functions
 const generateToken = require('../config/generateToken');
@@ -11,10 +16,34 @@ const Portfolio = require('../models/portfolio');
 const Post = require('../models/post');
 const Image = require('../models/image');
 
+// Multer ships with storage engines DiskStorage and MemoryStorage
+// And Multer adds a body object and a file or files object to the request object.
+// The body object contains the values of the text fields of the form,
+// the file or files object contains the files uploaded via the form.
+const storage = multer.memoryStorage();
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    cb(null, true);
+  } else {
+    // rejects storing a file
+    cb(null, false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 1024 * 1024 * 5
+  },
+  fileFilter: fileFilter
+});
+
 // Handle Register request
 exports.user_register = [
 
   // Store req.body data in res.locals.body for later comparison
+  // (non-escaped data to escaped data)
   (req, res, next) => {
     res.locals.body = {...req.body};
     next();
@@ -85,7 +114,7 @@ exports.user_register = [
         newUser.save(function(err) {
           if (err) { return next(err); }
 
-          // Create a portfolio object
+          // Create a portfolio object (icon -> default 'Anonymous')
           const newPortfolio = new Portfolio({
             "owner": newUser._id,
           });
@@ -155,7 +184,8 @@ exports.user_detail = function(req, res, next) {
         art_type: post.art_type,
         date_posted: post.date_posted,
         hashtags: post.hashtags,
-        image: post.image,
+        image: post.image.location,
+        numberOfComments: post.numberOfComments,
         poster: poster,
         private: post.private,
         summary: post.summary,
@@ -186,6 +216,160 @@ exports.user_detail = function(req, res, next) {
 };
 
 // Handle User update
-exports.user_update = function(req, res, next) {
-  res.send('TODO: User update: ' + req.params.userid);
-};
+exports.user_update = [
+
+  verifyToken,
+
+  // Stores image in uploads folder using
+  // multer and creates a reference to the file
+  // In upload.single("file") - the name inside the single-quote is the name of the field that is going to be uploaded.
+  upload.single('file'),
+
+  // Sanitise fields
+  body('biography').trim().escape(),
+
+  (req, res, next) => {
+
+    // Find portfolio of user to access owner id (since we don't have it saved on the frontend)
+    Portfolio.findById(req.params.userid)
+      .exec((err, portfolio) => {
+        if (err) { return next(err); }
+
+        const newPortfolio = {
+          _id: portfolio._id, // This is required, or a new ID will be assigned!
+          owner: portfolio.owner, // The reason we needed to query first
+          icon: req.body.icon,
+          biography: req.body.biography
+        }
+
+        // Check if user has an existing avatar
+        if (portfolio.avatar) {
+          newPortfolio.avatar = portfolio.avatar; // Store image id
+        }
+
+        // Check if user wants to update their avatar
+        const file = req.file;
+        if (file) { // Yes
+          
+          // AWS credentials
+          let s3bucket = new AWS.S3({
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            region: process.env.AWS_REGION
+          });
+
+          // Check if user has an existing avatar
+          if (portfolio.avatar) { // Yes, find image in db => delete from s3 => upload to s3 => update image db => update Portfolio
+
+            // Find existing image
+            Image.findById(newPortfolio.avatar)
+              .exec((err, imageFound) => {
+                if (err) { return next(err); }
+
+                let params = {
+                  Bucket: process.env.AWS_BUCKET_NAME,
+                  Key: imageFound.key
+                };
+
+                // Now Delete the file from AWS-S3
+                s3bucket.deleteObject(params, (err, data) => {
+                  if (err) { return next(err); }
+
+                  // Where you want to store your file
+                  var newParams = {
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: Date.now() + file.originalname,
+                    Body: file.buffer,
+                    ContentType: file.mimetype,
+                    ACL: "public-read"
+                  };
+
+                  // Upload new image to S3
+                  s3bucket.upload(newParams, function(err, newData) {
+                    if (err) { return next(err); }
+
+                    // Create a new image object
+                    const newImage = new Image({
+                      key: newData.Key,
+                      location: newData.Location,
+                      mimetype: file.mimetype,
+                      size: file.size,
+                      type: 'Avatar',
+                      _id: newPortfolio.avatar // Necessary
+                    });
+
+                    // Update image
+                    Image.findByIdAndUpdate(newPortfolio.avatar, newImage, {}, (err, theimage) => {
+                      if (err) { return next(err); }
+
+                      Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
+                        .populate('avatar')
+                        .exec((err, theportfolio) => {
+                        if (err) { return next(err); }
+
+                        // Successful - return newly-updated portfolio info
+                        return res.status(200).json(theportfolio);
+                      });
+                    });
+                  });
+                });
+              });
+          }
+
+          else { // No, upload to s3 => create new image => update portfolio
+
+            // Where you want to store your file
+            var params = {
+              Bucket: process.env.AWS_BUCKET_NAME,
+              Key: Date.now() + file.originalname,
+              Body: file.buffer,
+              ContentType: file.mimetype,
+              ACL: "public-read"
+            };
+
+            // Upload to S3 bucket
+            s3bucket.upload(params, function(err, data) {
+              if (err) { return next(err); }
+
+              // Create a new image object
+              const newImage = new Image({
+                key: data.Key,
+                location: data.Location,
+                mimetype: file.mimetype,
+                size: file.size,
+                type: 'Avatar',
+              });
+
+              // Save new image
+              newImage.save(function(err) {
+                if (err) { return next(err); }
+
+                // Assign newly-uploaded avatar
+                newPortfolio.avatar = newImage._id; // id gets stored after save
+
+                Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
+                  .populate('avatar')
+                  .exec((err, theportfolio) => {
+                  if (err) { return next(err); }
+
+                  // Successful - return newly-updated portfolio info
+                  return res.status(200).json(theportfolio);
+                });
+              });
+            });
+          }
+        } 
+        
+        else { // No, just update portfolio
+          Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
+            .populate('avatar')
+            .exec(async (err, theportfolio) => {
+            if (err) { return next(err); }
+
+            // Successful - return newly-updated portfolio info
+            return res.status(200).json(theportfolio);
+          });
+        }
+      });
+  }
+];

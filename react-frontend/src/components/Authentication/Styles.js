@@ -94,6 +94,21 @@ const FormContainer = styled.div`
   .password {
     margin-bottom: 10px;
   }
+
+  // Needs to be implemented
+  .forgot-password {
+    cursor: not-allowed;
+  }
+
+  // Needs to be implemented
+  .terms-of-use {
+    cursor: not-allowed;
+  }
+
+  // Needs to be implemented
+  .privacy-policy {
+    cursor: not-allowed;
+  }
 `;
 
 export default FormContainer;

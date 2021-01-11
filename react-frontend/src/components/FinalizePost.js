@@ -160,8 +160,8 @@ const FinalizePost = ({ mountFeedback, formFields, handleFormChanges, submit }) 
           </div>
         </SelectGroup>
         <FormGroup className="form-group">
-          <label>Write some <i>tags</i> that will help people find your post:</label>
-          <input type="text" className="form-control" name="hashtags" value={formFields.hashtags} onChange={handleFormChanges} />
+          <label>Write some <i>tags</i> separated by spaces that will help people find your post:</label>
+          <input type="text" className="form-control" name="hashtags" value={formFields.hashtags} onChange={handleFormChanges} placeholder="surrealism cubism ..." />
         </FormGroup>
         <RadioGroup className="form-group">
           <div className="form-check form-check-inline">

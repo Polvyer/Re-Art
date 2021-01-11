@@ -14,7 +14,7 @@ const generateToken = (res, id) => {
   return res.cookie('token', token, {
     expires: new Date(Date.now() + expiration), // Cookies that are used for sensitive information (such as indicating authentication) should have a short lifetime
     secure: false, // Sent to the server only with an encrypted request over the HTTPS protocol, never with unsecured HTTP (except on localhost)
-    httpOnly: true, // Inaccessible to the JavaScript Document.cookie API; it is sent only to the server
+    httpOnly: true, // Inaccessible to the JavaScript Document.cookie API; it is sent only to the server (helps with XSS)
   });
 }
 
