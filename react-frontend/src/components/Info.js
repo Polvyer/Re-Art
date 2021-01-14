@@ -19,16 +19,18 @@ const InfoContainer = styled.div`
   background-color: #3c545c;
 `;
 
-const Avatar = styled.img`
-  display: block;
-  margin: 0 auto;
-  margin-bottom: 3px;
-  max-width: 40%;
-  height: auto;
+const ImageContainer = styled.div`
+  height: 13em;
 
-  @media screen and (max-width: 700px) {
-    max-width: 80%;
-  }
+  /* Flex Parent */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Avatar = styled.img`
+  max-width: 100%;
+  max-height: 100%; /* Lower than ImageContainer height */
 `;
 
 const TextContainer = styled.div`
@@ -90,6 +92,11 @@ const Info = ({ owner, info, showEditButton, setShowEditInfo }) => {
   // URI parameters (/users/:userid)
   const { userid } = useParams();
 
+  // Scrolls user to the top of the page (since sometimes it starts the user at the bottom of the page)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Changes navbar title
   useEffect(() => {
     if (user && user._id === userid) {
@@ -101,7 +108,7 @@ const Info = ({ owner, info, showEditButton, setShowEditInfo }) => {
         setNavTitle(`${owner}'s Portfolio`);
       } else {
         // No one's portfolio
-        setNavTitle('Not Found');
+        setNavTitle("?'s Portfolio");
       }
     }
   }, [user, userid, setNavTitle, owner]);
@@ -112,7 +119,7 @@ const Info = ({ owner, info, showEditButton, setShowEditInfo }) => {
   return (
     <InfoContainer className="px-3 mt-5 py-3">
       <div>
-        {showEditButton ? <Avatar className="img-fluid" src={(user.avatar && user.avatar.location) || DefaultAvatar} alt="Avatar" /> : <Avatar className="img-fluid" src={(info.avatar && info.avatar.location) || DefaultAvatar} alt="Avatar" />}
+        {showEditButton ? <ProfilePicture user={user} /> : <ProfilePicture user={info} />}
         <TextContainer>
           <div className="username">@{info.owner}</div>
           <div>
@@ -125,5 +132,13 @@ const Info = ({ owner, info, showEditButton, setShowEditInfo }) => {
     </InfoContainer>
   )
 };
+
+const ProfilePicture = ({ user }) => {
+  return (
+    <ImageContainer>
+      <Avatar className="img-fluid" src={(user.avatar && user.avatar.location) || DefaultAvatar} alt="Avatar" />
+    </ImageContainer>
+  )
+}
 
 export default Info;

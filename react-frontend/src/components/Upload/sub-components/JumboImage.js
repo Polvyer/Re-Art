@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react';
 import styled from 'styled-components';
 
 // Context
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../../context/UserContext';
 
 const ContentContainer = styled.div`
   min-height: 87vh; /* ImageContainer height + ButtonContainer height */
@@ -44,7 +44,7 @@ const Button = styled.button`
   box-shadow: 0px 2px 5px black;
 `;
 
-const JumboImage = ({ image, imageRef, showRemoveButton, removeFile, setShowFeedback }) => {
+const JumboImage = ({ children, image, imageRef, showRemoveButton, removeFile, setShowFeedback }) => {
 
   // Context
   const { setNavTitle } = useContext(UserContext);
@@ -56,6 +56,7 @@ const JumboImage = ({ image, imageRef, showRemoveButton, removeFile, setShowFeed
 
   return (
     <ContentContainer>
+      {children}
       <ImageContainer>
         <Img ref={imageRef} className="img-fluid" src={image.url} />
       </ImageContainer>

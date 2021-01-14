@@ -17,6 +17,14 @@ const Card = styled.div`
   flex-grow: 0.2; /* Prevents growing */
   border-radius: 10px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
 `;
 
 const ImageContainer = styled.div`
@@ -37,6 +45,7 @@ const Image = styled.img`
 `;
 
 const SpeechBubble = styled.p`
+  flex: 1;
   text-align: center;
   background: #FFF;
   font-size: 0.9rem;
@@ -95,7 +104,8 @@ const Icon = styled.div`
 `;
 
 // Username
-const Name = styled.div`
+const Name = styled.span`
+  display: block; 
   font-size: 1.3rem;
   color: white;
   margin-left: 5px;

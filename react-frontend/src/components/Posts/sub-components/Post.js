@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 
 // Styles
 import { ImageContainer, Image, Card, SpeechBubble, CardFooter, Section, Icon, Name, CommentIcon, Number } from '../Styles';
@@ -15,14 +15,25 @@ import { decideIcon } from '../../../services/decideIcon';
 
 const Post = ({ post, toggleModal }) => {
 
+  // Get the user's icon
   const icon = decideIcon(post.poster.icon);
+
+  // Used to redirect to a specific post
+  const history = useHistory();
+
+  // Redirects user to the specific post page
+  const viewPost = (postid, e) => { 
+    if (e.target.tagName.toString() !== 'IMG' && e.target.tagName.toString() !== 'SPAN') {
+      history.push(`/posts/${postid}`);
+    }
+  }
   
   return (
-    <Card key={post._id} className="p-2 m-3">
+    <Card onClick={viewPost.bind(null, post._id)} id={post._id} key={post._id} className="p-2 m-3">
       <ImageContainer>
         <Image onClick={toggleModal} className="img-fluid" src={post.image || Dummy} alt={post.poster.owner} />
       </ImageContainer>
-      <div className="pt-4 pb-1 px-3 clearfix">
+      <div className="pt-4 pb-1 px-3 clearfix content">
         <SpeechBubble>{post.title}</SpeechBubble>
         <CardFooter>
           <Section>

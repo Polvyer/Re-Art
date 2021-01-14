@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 const InputContainer = styled.form`
   background-color: rgba(0, 0, 0, 0.5);
-  height: 87vh;
+  min-height: 87vh;
   border: 5px solid rgba(92, 92, 92, 1);
   width: 100%;
 

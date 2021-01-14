@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 
 // Styles
-import { ContentContainer, CustomInput, HiddenInput, Pencil, Image, TextContainer, SelectLabel, SelectButtons, FormGroup, FooterButtons } from './Styles';
+import { ContentContainer, CustomInput, HiddenInput, Pencil, Image, TextContainer, SelectLabel, SelectButtons, FormGroup, FooterButtons, Button } from './Styles';
 
 // Components
 import Error from '../Error';
@@ -42,6 +42,7 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
     icon: info.icon,
   });
   const [ errors, setErrors ] = useState([]);
+  const [ saveChangesSpinner, setSaveChangesSpinner ] = useState(false);
 
   // Used to allow us to call scrollIntoView
   const errorRef = useRef(null);
@@ -73,6 +74,10 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
 
   // Send updated portfolio info
   const submit = async (e) => {
+
+    // Customize save changes button to have a spinner
+    setSaveChangesSpinner(true);
+
     try {
       // Append all form data
       const formData = new FormData();
@@ -100,7 +105,24 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
         history.push(`/users/${userid}`); // Redirect to portfolio
       }
     } catch(error) {
-      console.log(error.response)
+
+      // Customize save changes button to NOT have a spinner
+      setSaveChangesSpinner(false);
+
+      if (error.response) { // Intentional error
+        if (error.response.status === 401) { // User's cookie or token expired
+
+          // Make user null
+          setUser(null);
+
+          // Redirect user to login page
+          history.push(`/session/new`);
+        } else { // Some other error
+          setErrors(error.response.data);
+        }
+      } else { // Server down most likely
+        setErrors(['Oops! Something went wrong, please try again.']);
+      }
     }
   }
 
@@ -140,7 +162,7 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
     const newErrors = [...errors];
     newErrors.splice(index, 1);
     setErrors(newErrors);
-  }
+  };
 
   // Icon array
   const icons = [
@@ -176,11 +198,21 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
           <textarea maxLength="150" value={formFields.biography} onChange={handleFormChanges} className="form-control" rows="3" name="biography"></textarea>
         </FormGroup>
         <FooterButtons>
-          <button onClick={setShowEditInfo.bind(null, false)} className="btn btn-danger"><i className="fa fa-times-circle-o" aria-hidden="true"></i> Cancel</button>
-          <button onClick={submit} className="btn btn-success"><i className="fa fa-floppy-o" aria-hidden="true"></i>   Save Changes</button>
+          {saveChangesSpinner ? <button disabled className="btn btn-danger"><i className="fa fa-times-circle-o" aria-hidden="true"></i> Cancel</button> : <button onClick={setShowEditInfo.bind(null, false)} className="btn btn-danger"><i className="fa fa-times-circle-o" aria-hidden="true"></i> Cancel</button>}
+          {saveChangesSpinner ? <LoadingButton /> : <button onClick={submit} className="btn btn-success"><i className="fa fa-floppy-o" aria-hidden="true"></i>   Save Changes</button>}
         </FooterButtons>
       </ContentContainer>
     </div>
+  );
+};
+
+// For when user submits changes
+const LoadingButton = () => {
+  return (
+    <Button className="btn btn-success" type="button" disabled>
+      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Saving...
+    </Button>
   );
 };
 

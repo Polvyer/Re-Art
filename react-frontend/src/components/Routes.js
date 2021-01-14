@@ -8,9 +8,10 @@ import Home from './Home';
 import Signup from './Authentication/Signup';
 import Login from './Authentication/Login';
 import Portfolio from './Portfolio';
-import Upload from './Upload';
+import Upload from './Upload/Upload';
 import NotFound from './NotFound';
 import LogoutModal from './LogoutModal';
+import View from './View/View';
 
 // Context Provider
 import { UserContext } from '../context/UserContext';
@@ -75,8 +76,15 @@ const Routes = () => {
           console.log('Status: ', response.status);
         }
       } catch(error) {
-        // User is not logged in / token or cookie expired
-        setUser(null);
+        if (error.response) {
+          if (error.response.status === 401) {
+            // Token or cookie expired
+            setUser(null);
+          }
+
+        } else { // Server is down
+
+        }
       }
     }
     checkIfLoggedIn();
@@ -91,8 +99,9 @@ const Routes = () => {
           <Route exact path='/'>
             <Redirect to='/posts' />
           </Route>
+          <Route exact path='/posts' render={(props) => <Home {...props} setSidebarActive={setSidebarActive} sidebarActive={sidebarActive} />} />
           <Route path='/posts/new' component={Upload} />
-          <Route path='/posts' render={(props) => <Home {...props} setSidebarActive={setSidebarActive} sidebarActive={sidebarActive} />} />
+          <Route path='/posts/:postid' component={View} />
           <Route path='/session/new' component={Login} />
           <Route path='/users/new' component={Signup} />
           <Route path='/users/:userid' component={Portfolio} />

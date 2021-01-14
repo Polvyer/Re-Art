@@ -22,6 +22,12 @@ const SideForm = styled.form`
     width: 1em;
     transform: translateY(5px);
   }
+
+  small {
+    display: block;
+    margin-top: 5px;
+    transform: translateX(-7px);
+  }
 `;
 
 const Sidebar = ({ artTypes, setArtTypes, icons, setIcons, hashtag, setHashtag }) => {

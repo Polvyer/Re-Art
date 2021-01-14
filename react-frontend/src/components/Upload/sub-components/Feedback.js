@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react';
 import styled from 'styled-components';
 
 // Context
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../../context/UserContext';
 
 const ContentContainer = styled.div`
   min-height: 87vh; /* ImageContainer height + ButtonContainer height */

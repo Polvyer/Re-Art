@@ -53,7 +53,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle, setShowLogoutMod
     { href: "/", src: house_door_fill, alt: "Home, Search Results" },
     { href: "/posts/new", src: file_earmark_arrow_up_fill, alt: "Upload Your Image, Ask For Feedback, Finalize Your Post" },
     { href: `/users/${user ? user._id : null}`, src: person_circle, alt: "Your Portfolio, Editing Portfolio" },
-    { href: "/", src: bell_fill, alt: "notifications" },
+    { href: "#", src: bell_fill, alt: "notifications" },
   ];
 
   const loggedOutIcons = [

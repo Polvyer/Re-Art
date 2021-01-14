@@ -169,6 +169,18 @@ const FooterButtons = styled.div`
   }
 `;
 
+// Loading button styles
+const Button = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Spinner
+  span {
+    margin-right: 5px;
+  }
+`;
+
 export {
   ContentContainer,
   CustomInput,
@@ -181,5 +193,6 @@ export {
   ActiveLabel,
   Label,
   FormGroup,
-  FooterButtons
+  FooterButtons,
+  Button,
 };

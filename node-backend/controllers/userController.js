@@ -146,7 +146,7 @@ exports.user_register = [
 ];
 
 // Send details for a specific User
-exports.user_detail = function(req, res, next) {
+exports.user_detail = async function(req, res, next) {
   // req.params.userid => portfolio id (not user id)
   async.parallel({
     // Get user's info (portfolio info)
@@ -173,6 +173,12 @@ exports.user_detail = function(req, res, next) {
   }, function(err, results) {
     if (err) { return next(err); }
 
+    // Check if user exists
+    if (!results.portfolio) {
+      // User does not exist
+      return res.status(404).json(['User not found']);
+    }
+
     // Modify post list to liking
     const posts = results.posts.map(post => {
       const poster = {
@@ -190,6 +196,7 @@ exports.user_detail = function(req, res, next) {
         private: post.private,
         summary: post.summary,
         title: post.title,
+        _id: post._id,
       };
     });
 
@@ -230,146 +237,152 @@ exports.user_update = [
 
   (req, res, next) => {
 
-    // Find portfolio of user to access owner id (since we don't have it saved on the frontend)
-    Portfolio.findById(req.params.userid)
-      .exec((err, portfolio) => {
-        if (err) { return next(err); }
+    // Quickly check if id in token matches req.params.userid (final security check)
+    if (req.portfolio._id !== req.params.userid) {
+      return res.status(401).json(['Access denied due to invalid credentials.']);
+    } else {
 
-        const newPortfolio = {
-          _id: portfolio._id, // This is required, or a new ID will be assigned!
-          owner: portfolio.owner, // The reason we needed to query first
-          icon: req.body.icon,
-          biography: req.body.biography
-        }
+      // Find portfolio of user to access owner id (since we don't have it saved on the frontend)
+      Portfolio.findById(req.params.userid)
+        .exec((err, portfolio) => {
+          if (err) { return next(err); }
 
-        // Check if user has an existing avatar
-        if (portfolio.avatar) {
-          newPortfolio.avatar = portfolio.avatar; // Store image id
-        }
-
-        // Check if user wants to update their avatar
-        const file = req.file;
-        if (file) { // Yes
-          
-          // AWS credentials
-          let s3bucket = new AWS.S3({
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            region: process.env.AWS_REGION
-          });
+          const newPortfolio = {
+            _id: portfolio._id, // This is required, or a new ID will be assigned!
+            owner: portfolio.owner, // The reason we needed to query first
+            icon: req.body.icon,
+            biography: req.body.biography
+          }
 
           // Check if user has an existing avatar
-          if (portfolio.avatar) { // Yes, find image in db => delete from s3 => upload to s3 => update image db => update Portfolio
+          if (portfolio.avatar) {
+            newPortfolio.avatar = portfolio.avatar; // Store image id
+          }
 
-            // Find existing image
-            Image.findById(newPortfolio.avatar)
-              .exec((err, imageFound) => {
-                if (err) { return next(err); }
+          // Check if user wants to update their avatar
+          const file = req.file;
+          if (file) { // Yes
+            
+            // AWS credentials
+            let s3bucket = new AWS.S3({
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+              region: process.env.AWS_REGION
+            });
 
-                let params = {
-                  Bucket: process.env.AWS_BUCKET_NAME,
-                  Key: imageFound.key
-                };
+            // Check if user has an existing avatar
+            if (portfolio.avatar) { // Yes, find image in db => delete from s3 => upload to s3 => update image db => update Portfolio
 
-                // Now Delete the file from AWS-S3
-                s3bucket.deleteObject(params, (err, data) => {
+              // Find existing image
+              Image.findById(newPortfolio.avatar)
+                .exec((err, imageFound) => {
                   if (err) { return next(err); }
 
-                  // Where you want to store your file
-                  var newParams = {
+                  let params = {
                     Bucket: process.env.AWS_BUCKET_NAME,
-                    Key: Date.now() + file.originalname,
-                    Body: file.buffer,
-                    ContentType: file.mimetype,
-                    ACL: "public-read"
+                    Key: imageFound.key
                   };
 
-                  // Upload new image to S3
-                  s3bucket.upload(newParams, function(err, newData) {
+                  // Now Delete the file from AWS-S3
+                  s3bucket.deleteObject(params, (err, data) => {
                     if (err) { return next(err); }
 
-                    // Create a new image object
-                    const newImage = new Image({
-                      key: newData.Key,
-                      location: newData.Location,
-                      mimetype: file.mimetype,
-                      size: file.size,
-                      type: 'Avatar',
-                      _id: newPortfolio.avatar // Necessary
-                    });
+                    // Where you want to store your file
+                    var newParams = {
+                      Bucket: process.env.AWS_BUCKET_NAME,
+                      Key: Date.now() + file.originalname,
+                      Body: file.buffer,
+                      ContentType: file.mimetype,
+                      ACL: "public-read"
+                    };
 
-                    // Update image
-                    Image.findByIdAndUpdate(newPortfolio.avatar, newImage, {}, (err, theimage) => {
+                    // Upload new image to S3
+                    s3bucket.upload(newParams, function(err, newData) {
                       if (err) { return next(err); }
 
-                      Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
-                        .populate('avatar')
-                        .exec((err, theportfolio) => {
+                      // Create a new image object
+                      const newImage = new Image({
+                        key: newData.Key,
+                        location: newData.Location,
+                        mimetype: file.mimetype,
+                        size: file.size,
+                        type: 'Avatar',
+                        _id: newPortfolio.avatar // Necessary
+                      });
+
+                      // Update image
+                      Image.findByIdAndUpdate(newPortfolio.avatar, newImage, {}, (err, theimage) => {
                         if (err) { return next(err); }
 
-                        // Successful - return newly-updated portfolio info
-                        return res.status(200).json(theportfolio);
+                        Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
+                          .populate('avatar')
+                          .exec((err, theportfolio) => {
+                          if (err) { return next(err); }
+
+                          // Successful - return newly-updated portfolio info
+                          return res.status(200).json(theportfolio);
+                        });
                       });
                     });
                   });
                 });
-              });
-          }
+            }
 
-          else { // No, upload to s3 => create new image => update portfolio
+            else { // No, upload to s3 => create new image => update portfolio
 
-            // Where you want to store your file
-            var params = {
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: Date.now() + file.originalname,
-              Body: file.buffer,
-              ContentType: file.mimetype,
-              ACL: "public-read"
-            };
+              // Where you want to store your file
+              var params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: Date.now() + file.originalname,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+                ACL: "public-read"
+              };
 
-            // Upload to S3 bucket
-            s3bucket.upload(params, function(err, data) {
-              if (err) { return next(err); }
-
-              // Create a new image object
-              const newImage = new Image({
-                key: data.Key,
-                location: data.Location,
-                mimetype: file.mimetype,
-                size: file.size,
-                type: 'Avatar',
-              });
-
-              // Save new image
-              newImage.save(function(err) {
+              // Upload to S3 bucket
+              s3bucket.upload(params, function(err, data) {
                 if (err) { return next(err); }
 
-                // Assign newly-uploaded avatar
-                newPortfolio.avatar = newImage._id; // id gets stored after save
+                // Create a new image object
+                const newImage = new Image({
+                  key: data.Key,
+                  location: data.Location,
+                  mimetype: file.mimetype,
+                  size: file.size,
+                  type: 'Avatar',
+                });
 
-                Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
-                  .populate('avatar')
-                  .exec((err, theportfolio) => {
+                // Save new image
+                newImage.save(function(err) {
                   if (err) { return next(err); }
 
-                  // Successful - return newly-updated portfolio info
-                  return res.status(200).json(theportfolio);
+                  // Assign newly-uploaded avatar
+                  newPortfolio.avatar = newImage._id; // id gets stored after save
+
+                  Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
+                    .populate('avatar')
+                    .exec((err, theportfolio) => {
+                    if (err) { return next(err); }
+
+                    // Successful - return newly-updated portfolio info
+                    return res.status(200).json(theportfolio);
+                  });
                 });
               });
+            }
+          } 
+          
+          else { // No, just update portfolio
+            Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
+              .populate('avatar')
+              .exec(async (err, theportfolio) => {
+              if (err) { return next(err); }
+
+              // Successful - return newly-updated portfolio info
+              return res.status(200).json(theportfolio);
             });
           }
-        } 
-        
-        else { // No, just update portfolio
-          Portfolio.findByIdAndUpdate(req.params.userid, newPortfolio, { new: true })
-            .populate('avatar')
-            .exec(async (err, theportfolio) => {
-            if (err) { return next(err); }
-
-            // Successful - return newly-updated portfolio info
-            return res.status(200).json(theportfolio);
-          });
-        }
-      });
+        });
+    }
   }
 ];

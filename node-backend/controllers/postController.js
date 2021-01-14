@@ -132,8 +132,9 @@ exports.post_create = [
           art_type: req.body.art_type,
           hashtags: req.body.hashtags,
           private: req.body.private,
-          poster: req.portfolio, // From verifyToken middleware
+          poster: req.portfolio._id, // From verifyToken middleware
           image: newImage._id, // id gets stored after save
+          // numberOfComments and date_posted have defaults
         });
 
         // Save new post
@@ -145,37 +146,19 @@ exports.post_create = [
         });
       });
     });
-
-    /*
-    // Create a Post object
-    const post = new Post(
-      {
-        title: req.body.title,
-        summary: req.body.summary,
-        art_type: req.body.art_type,
-        hashtags: req.body.hashtags,
-        private: req.body.private,
-        date_posted: Date.now(),
-        poster: req.user.id, // From verify token
-        image: req.body.image,
-      }
-    );
-
-    console.log(post)
-
-    // Save Post
-    post.save(function(err) {
-      if (err) { return res.status(500).json(err.toString()); }
-      // Successful
-      return res.status(200).json(post);
-    });
-    */
   }
 ]
 
 // Send details for a specific Post
-exports.post_detail = function(req, res, next) {
-  res.send('TODO: Post detail: ' + req.params.postid);
+exports.post_detail = async (req, res, next) => {
+  try {
+    const response = await Post.findById(req.params.postid).populate('image').populate({ path: 'poster', model: 'Portfolio', populate: { path: 'owner', model: 'User' }}).exec();
+    const data = { ...response._doc, poster: { _id: response._doc.poster._id, icon: response._doc.poster.icon, owner: response._doc.poster.owner.username } };
+    return res.status(200).json(data);
+  } catch(err) {
+    console.log(err)
+    return next(err);
+  }
 };
 
 // Handle Post update
@@ -189,14 +172,66 @@ exports.post_delete = function(req, res, next) {
 };
 
 // Send list of all Comments
-exports.comment_list = function(req, res, next) {
-  res.send('TODO: Comment list');
+exports.comment_list = async (req, res, next) => {
+  try {
+    const response = await Comment.find({ post: req.params.postid }).populate('poster').exec();
+    return res.status(200).json(response);
+  } catch(err) {
+    return next(err);
+  }
 };
 
 // Handle Comment create
-exports.comment_create = function(req, res, next) {
-  res.send('TODO: Comment create');
-};
+exports.comment_create = [
+
+  verifyToken,
+
+  upload.single('attachment'),
+
+  // Sanitise fields
+  body('description').trim().escape(),
+
+  async (req, res, next) => {
+    const file =  req.file;
+
+    // Update number of comments on post
+    try {
+      const post = await Post.findById(req.params.postid).exec();
+      post.numberOfComments++;
+      await Post.findByIdAndUpdate(req.params.postid, post, {});
+    } catch(err) {
+      return next(err);
+    }
+
+    let newComment = {
+      description: req.body.description,
+      poster: req.portfolio._id,
+      post: req.params.postid
+    };
+
+    if (file) { // Attachment included
+      console.log('Attachment included');
+      return res.status(500).json('to-do');
+    } 
+    
+    else { // No attachment
+      const comment = new Comment(newComment);
+      try {
+        await comment.save();
+        const response = await comment.populate('poster').execPopulate();
+        return res.status(200).json(response);
+      } catch(err) {
+        return next(err);
+      }
+    }
+    
+    console.log(file);
+    console.log(req.portfolio._id);
+    console.log(req.params.postid);
+    res.send('TODO: Comment create');
+  }
+  
+];
 
 // Handle Comment delete
 exports.comment_delete = function(req, res, next) {

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { DateTime } = require("luxon");
 
 const Schema = mongoose.Schema;
 
@@ -15,6 +16,12 @@ const PostSchema = new Schema(
     numberOfComments: { type: Number, required: true, default: 0 }
   }
 );
+
+PostSchema
+.virtual('date_posted_formatted')
+.get(function () {
+  return DateTime.fromJSDate(this.date_posted).toLocaleString(DateTime.DATE_MED);
+});
 
 // Export model
 module.exports = mongoose.model('Post', PostSchema);

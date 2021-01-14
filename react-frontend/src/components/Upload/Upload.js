@@ -4,13 +4,14 @@ import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 
 // Components
-import Input from './Input';
-import JumboImage from './JumboImage';
-import Feedback from './Feedback';
-import FinalizePost from './FinalizePost';
+import Input from './sub-components/Input';
+import JumboImage from './sub-components/JumboImage';
+import Feedback from './sub-components/Feedback';
+import FinalizePost from './sub-components/FinalizePost';
+import Error from '../Error';
 
 // Context
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../context/UserContext';
 
 const MainContainer = styled.main`
   /* Flex Parent */
@@ -36,6 +37,8 @@ const Upload = () => {
     hashtags: '',
     private: false,
   });
+  const [ errors, setErrors ] = useState([]);
+  const [ postSpinner, setPostSpinner ] = useState(false);
 
   // Context
   const { setUser } = useContext(UserContext);
@@ -45,8 +48,9 @@ const Upload = () => {
 
   // Used to allow us to call scrollIntoView
   const imageRef = useRef(null);
+  const errorRef = useRef(null);
 
-  // Verify token
+  // Verify token (protected route)
   useEffect(() => {
     async function checkIfLoggedIn() {
       try {
@@ -54,18 +58,40 @@ const Upload = () => {
         // GET request to /session
         await axios.get('http://localhost:5000/session',  { withCredentials: true });
       } catch(error) {
-        // User is not logged in / token or cookie expired
         if (error.response) {
-          // Make user null
-          setUser(null);
+          if (error.response.status === 401) { // Token or cookie expired
+            // Make user null
+            setUser(null);
 
-          // Redirect to login
-          history.push('/session/new');
+            // Redirect to login
+            history.push('/session/new');
+          } else { // Some other error
+            setErrors(error.response.data);
+          }
+        } else { // Server is down most likely
+          setErrors(['Oops! Something went wrong, please try again.']);
         }
       }
     }
     checkIfLoggedIn();
   }, [history, setUser]);
+
+  // Scrolls user up to errors
+  useEffect(() => {
+    if ((errors.length > 0) && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth' }); // Smooth is clean
+    }
+  }, [errors]);
+
+  // Runs only when compoment unmounts
+  useEffect(() => {
+    // Removes image url from memory if user cancels form field
+    return () => {
+      if (image.url) { // imageFile !== null (avoid memory issues)
+        URL.revokeObjectURL(image.url);
+      }
+    }
+  }, [image.url]);
 
   // Mounts Feedback and Unmounts FinalizePost
   const mountFeedback = () => {
@@ -88,6 +114,13 @@ const Upload = () => {
        and creates a temporary local URL that is tied to the document in which 
        it is created (meaning it won’t remember the URL if you leave the page and come back). */
     if (e.target.files.length > 0) { // Prevents a weird bug that happens when a user uploads, but then cancels
+
+      // Only accept image file types (jpg, jpeg, png)
+      if ((e.target.files[0].type !== 'image/jpeg') && (e.target.files[0].type !== 'image/png')) {
+        setErrors(['Only files with the following extension are allowed: png jpg jpeg']);
+        return;
+      }
+
       if (image.url) { // imageFile !== null (avoid memory issues)
         URL.revokeObjectURL(image.url);
       }
@@ -139,8 +172,19 @@ const Upload = () => {
     setFormFields(newFormFields);
   };
 
+  // Closes error
+  const closeError = (index) => {
+    const newErrors = [...errors];
+    newErrors.splice(index, 1);
+    setErrors(newErrors);
+  };
+
   // Create a new post (title, summary, art_type, hashtags, private, poster (portfolio id), image and date_posted and numberOfComments (handle this on server side))
   const submit = () => {
+    
+    // Customize post button to have a spinner
+    setPostSpinner(true);
+
     // Append all form data
     const formData = new FormData();
     formData.append('title', formFields.title);
@@ -158,16 +202,31 @@ const Upload = () => {
       }
     };
 
-    // POST request to /posts
+    // POST request to /posts (protected route)
     axios.post('http://localhost:5000/posts', formData, config)
       .then(response => {
-        console.log('Response: ', response);
+        if (response.status === 200) {
+          // Redirect to /posts
+          history.push('/posts');
+        }
+      }).catch(error => {
+        
+        // Customize post button to NOT have a spinner
+        setPostSpinner(false);
+        
+        if (error.response) {
+          if (error.response.status === 401) { // Token or cookie expired
+            // Make user null
+            setUser(null);
 
-        // Redirect to /posts
-        history.push('/posts');
-
-      }).catch(err => {
-        console.log('Err: ', err.response);
+            // Redirect to login
+            history.push('/session/new');
+          } else { // Some other error (intentional)
+            setErrors(error.response.data);
+          }
+        } else { // Server is down most likely
+          setErrors(['Oops! Something went wrong, please try again.']);
+        }
       });
   };
 
@@ -176,9 +235,17 @@ const Upload = () => {
     if (showFeedback) {
       return <Feedback setShowFeedback={setShowFeedback} formFields={formFields} handleFormChanges={handleFormChanges} mountFinalizePost={mountFinalizePost} />
     } else if (showFinalizePost) {
-      return <FinalizePost submit={submit} mountFeedback={mountFeedback} formFields={formFields} handleFormChanges={handleFormChanges} />
+      return (
+        <FinalizePost postSpinner={postSpinner} submit={submit} mountFeedback={mountFeedback} formFields={formFields} handleFormChanges={handleFormChanges}>
+          {(errors.length > 0) ? errors.map((error, index) => <Error errorRef={errorRef} closeError={closeError} error={error} index={index} key={index} />) : null}
+        </FinalizePost>
+      );
     }
-    return <JumboImage setShowFeedback={setShowFeedback} imageRef={imageRef} image={image} showRemoveButton={showRemoveButton} removeFile={removeFile} />
+    return (
+      <JumboImage setShowFeedback={setShowFeedback} imageRef={imageRef} image={image} showRemoveButton={showRemoveButton} removeFile={removeFile}>
+        {(errors.length > 0) ? errors.map((error, index) => <Error errorRef={errorRef} closeError={closeError} error={error} index={index} key={index} />) : null}
+      </JumboImage>
+    );
   }
 
   return (

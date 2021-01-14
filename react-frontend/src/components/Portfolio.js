@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import styled from "styled-components";
 import axios from 'axios';
 import { useParams, useHistory } from 'react-router-dom';
@@ -10,6 +10,8 @@ import { UserContext } from '../context/UserContext';
 import Posts from './Posts/Posts';
 import Info from './Info';
 import EditInfo from './EditInfo/EditInfo';
+import ScrollArrow from './ScrollArrow';
+import Error from './Error';
 
 const Paragraph = styled.p`
   width: 80%;
@@ -26,6 +28,10 @@ const Portfolio = () => {
   // State
   const [ data, setData ] = useState({ posts: [] });
   const [ showEditInfo, setShowEditInfo ] = useState(false);
+  const [ errors, setErrors ] = useState([]);
+
+  // Used to allow us to call scrollIntoView
+  const errorRef = useRef(null);
 
   // Context
   const { user } = useContext(UserContext);
@@ -44,24 +50,22 @@ const Portfolio = () => {
         const response = await axios.get(`http://localhost:5000/users/${userid}`, { withCredentials: true });
         setData(response.data);
       } catch(err) {
-        // No user found, redirect to Not Found
-        history.push('/404.html');
+        if (err.response) {
+          // No user found (most likely), redirect to Not Found
+          history.push('/404.html');
+        } else { // Server down most likely
+          setErrors(['Oops! Something went wrong, please try again.']);
+        }
       }
     };
     fetchPosts();
   }, [userid, history]);
 
-  const renderContent = () => {
-    if (showEditInfo) {
-      return <EditInfo data={data} setData={setData} info={info} userid={userid} setShowEditInfo={setShowEditInfo} />
-    }
-    return (
-      <div id="container">
-        <Info owner={data.owner} setShowEditInfo={setShowEditInfo} info={info} showEditButton={showEditButton} />
-        <Paragraph className="pl-3">Recent Posts</Paragraph>
-        <Posts posts={posts} />
-      </div>
-    );
+  // Closes error
+  const closeError = (index) => {
+    const newErrors = [...errors];
+    newErrors.splice(index, 1);
+    setErrors(newErrors);
   };
 
   // Extract posts and info
@@ -70,9 +74,27 @@ const Portfolio = () => {
   // If user is logged in and user's portfolio, display edit button
   const showEditButton = (user && user._id === userid);
 
+  const recentPosts = posts.slice().reverse();
+
+  // Determines what content to render
+  const renderContent = () => {
+    if (showEditInfo) {
+      return <EditInfo data={data} setData={setData} info={info} userid={userid} setShowEditInfo={setShowEditInfo} />
+    }
+    return (
+      <div id="container">
+        {errors.map((error, index) => <Error key={index} closeError={closeError} error={error} index={index} errorRef={errorRef} />)}
+        <Info owner={data.owner} setShowEditInfo={setShowEditInfo} info={info} showEditButton={showEditButton} />
+        <Paragraph className="pl-3">Recent Posts</Paragraph>
+        <Posts posts={recentPosts} />
+      </div>
+    );
+  };
+
   return (
     <div id="container">
       {renderContent()}
+      <ScrollArrow />
     </div>
   );
 };

@@ -10,6 +10,7 @@ import Sidebar from './Sidebar';
 import Posts from './Posts/Posts';
 import Error from './Error';
 import Spinner from './Spinner';
+import ScrollArrow from './ScrollArrow';
 
 // Filter Icons
 import Anonymous from '../images/userIcons/anonymous.svg';
@@ -156,7 +157,7 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
       if (applyHashtagFilter) {
         const hashtagArray = hashtagFilter.split(' ');
         // Check if at least one hashtag filter applies
-        if (!hashtagArray.some(e => post.hashtags.includes(e))) {
+        if (!hashtagArray.some(e => post.hashtags.toLowerCase().includes(e.toLowerCase()))) {
           // No hashtag filter applies
           return false;
         }
@@ -165,6 +166,9 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
       return true;
     });
   }
+
+  // MongoDB returns posts from oldest to newest, so just reverse
+  const sortedPosts = filteredPosts.reverse();
 
   // Decides whether to generate errors or content
   const renderContent = () => {
@@ -178,7 +182,8 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
     return (
       <MainContainer>
         {(contentLoaded && sidebarActive) ? <Sidebar artTypes={artTypeFilters} setArtTypes={setArtTypes} icons={iconFilters} setIcons={setIcons} hashtag={hashtagFilter} setHashtag={setHashtag} /> : null}
-        { contentLoaded ? <Posts posts={filteredPosts} /> : <Spinner />}
+        { contentLoaded ? <Posts posts={sortedPosts} /> : <Spinner />}
+        <ScrollArrow />
       </MainContainer>
     );
   };

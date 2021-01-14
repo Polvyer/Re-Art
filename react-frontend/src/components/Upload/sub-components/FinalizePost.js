@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react';
 import styled from 'styled-components';
 
 // Context
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../../context/UserContext';
 
 const ContentContainer = styled.div`
   min-height: 87vh; /* ImageContainer height + ButtonContainer height */
@@ -133,9 +133,13 @@ const Button = styled.button`
   width: 9rem;
   font-size: 1.3rem;
   box-shadow: 0px 2px 5px black;
+
+  display: flex;
+  align-items: baseline;
+  justify-content: space-evenly;
 `;
 
-const FinalizePost = ({ mountFeedback, formFields, handleFormChanges, submit }) => {
+const FinalizePost = ({ postSpinner, children, mountFeedback, formFields, handleFormChanges, submit }) => {
 
   // Context
   const { setNavTitle } = useContext(UserContext);
@@ -147,6 +151,7 @@ const FinalizePost = ({ mountFeedback, formFields, handleFormChanges, submit }) 
 
   return (
     <ContentContainer>
+      {children}
       <FinalizeContainer>
         <SelectGroup className="form-group">
           <label>Select art type:</label>
@@ -181,10 +186,19 @@ const FinalizePost = ({ mountFeedback, formFields, handleFormChanges, submit }) 
         </RadioGroup>
       </FinalizeContainer>
       <ButtonContainer>
-        <Button onClick={mountFeedback} className="btn btn-danger">Back</Button>
-        {(formFields.art_type && formFields.hashtags) ? <Button onClick={submit} className="btn btn-warning">Post</Button> : <Button className="btn btn-warning" disabled>Post</Button>}
+        {postSpinner ? <Button disabled className="btn btn-danger">Back</Button> : <Button onClick={mountFeedback} className="btn btn-danger">Back</Button>}
+        {(formFields.art_type && formFields.hashtags) ? (postSpinner ? <LoadingButton /> : <Button onClick={submit} className="btn btn-warning">Post</Button>) : <Button className="btn btn-warning" disabled>Post</Button>}
       </ButtonContainer>
     </ContentContainer>
+  );
+};
+
+const LoadingButton = () => {
+  return (
+    <Button className="btn btn-warning" type="button" disabled>
+      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Posting...
+    </Button>
   );
 };
 
