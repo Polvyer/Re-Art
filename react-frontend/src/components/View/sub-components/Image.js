@@ -31,6 +31,7 @@ const Container = styled.div`
 
 const Image = ({ image, owner }) => {
 
+  // State
   const [ showModal, setShowModal ] = useState(false);
   const [ modalInfo, setModalInfo ] = useState({
     image: null,

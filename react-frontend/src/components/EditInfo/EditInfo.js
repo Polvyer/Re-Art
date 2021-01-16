@@ -35,7 +35,7 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
   // State
   const [ image, setImage ] = useState({
     file: null,
-    url: (user.avatar && user.avatar.location) || DefaultAvatar,
+    url: (user && user.avatar && user.avatar.location) || DefaultAvatar,
   });
   const [ formFields, setFormFields ] = useState({
     biography: info.biography || '',
@@ -50,6 +50,36 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
   // Used to redirect when user updates their profile successfully
   const history = useHistory();
 
+  // Authorize user
+  useEffect(() => {
+    async function authorizeUser() {
+      try {
+        const response = await axios.get('http://localhost:5000/session', { withCredentials: true });
+
+        // Successful
+        if (response.status === 200) {
+          setUser(response.data);
+        }
+      } catch(error) {
+        if (error.response) { // Intentional error
+          if (error.response.status === 401) { // User's cookie or token expired
+  
+            // Make user null
+            setUser(null);
+  
+            // Redirect user to login page
+            history.push(`/session/new`);
+          } else { // Some other error
+            setErrors(error.response.data);
+          }
+        } else { // Server down most likely
+          setErrors(['Oops! Something went wrong, please try again.']);
+        }
+      }
+    }
+    authorizeUser();
+  }, [history, setUser])
+
   // Scrolls user up to errors
   useEffect(() => {
     if ((errors.length > 0) && errorRef.current) {
@@ -62,7 +92,7 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
     setNavTitle('Editing Portfolio');
   }, [setNavTitle]);
 
-  // Runs only when compoment unmounts
+  // Removes image url from memory (runs only when component unmounts)
   useEffect(() => {
     // Removes image url from memory if user cancels form field
     return () => {

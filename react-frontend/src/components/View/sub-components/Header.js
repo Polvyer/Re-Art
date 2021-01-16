@@ -39,21 +39,21 @@ const Section = styled.div`
   font-size: 1rem;
 
   .art_type {
-    padding: 10px;
-    background-color: #3c545c;
-    color: white;
     margin-right: 10px;
+    padding: 10px;
+    color: white;
     display: flex;
     align-items: center;
-    border-radius: 10px;
     font-family: 'Merriweather';
     font-weight: 600;
-    font-style: oblique;
+    border-radius: 10px;
+    background-color: #70118d;
   }
 
   .title {
     padding: 10px;
-    background-color: #3c545c;
+    font-weight: 600;
+    background-color: black;
     color: white;
     display: flex;
     align-items: center;

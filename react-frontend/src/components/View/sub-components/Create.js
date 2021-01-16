@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
 
 // Images
 import x from '../../../images/navIcons/x.svg';
@@ -67,6 +66,9 @@ const CustomInput = styled.label`
   font-size: 1rem;
   cursor: pointer;
   transform: translateY(4px);
+  :hover {
+    background-color: rgb(112, 17, 141, 0.7);
+  }
 `;
 
 const HiddenInput = styled.input`

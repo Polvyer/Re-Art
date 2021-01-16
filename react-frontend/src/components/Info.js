@@ -130,7 +130,7 @@ const Info = ({ owner, info, showEditButton, setShowEditInfo }) => {
       </div>
       {showEditButton ? <EditButton onClick={setShowEditInfo.bind(null, true)} className="btn"><EditIcon className="fa fa-pencil-square-o" aria-hidden="true"></EditIcon> Edit Info</EditButton> : null}
     </InfoContainer>
-  )
+  );
 };
 
 const ProfilePicture = ({ user }) => {

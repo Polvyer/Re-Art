@@ -23,9 +23,6 @@ const Container = styled.div`
     :hover {
       background-color: rgb(112, 17, 141, 0.7);
     }
-    :active {
-      border: 3px solid #8214a3;
-    }
   }
 `;
 
@@ -47,7 +44,7 @@ const Buttons = ({ priv, _id }) => {
 
   return (
     <Container>
-      {(user && user._id === _id) ? <UserButtons priv={priv} /> : <button className="btn normal purple">Favorite</button>}
+      {(user && user._id === _id) ? <UserButtons priv={priv} /> : ( user ? <button className="btn normal purple">Favorite</button> : null)}
     </Container>
   );
 };

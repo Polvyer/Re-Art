@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState, useContext } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import axios from 'axios';
+import qs from 'qs';
 
 // Components
 import Bubble from './Bubble';
+import ImageModal from '../../Posts/sub-components/ImageModal';
+
+// Context
+import { UserContext } from '../../../context/UserContext';
 
 // Helper functions
 import { decideIcon } from '../../../services/decideIcon';
@@ -19,8 +25,14 @@ const Content = styled.div`
   padding: 10px;
   border-radius: 10px;
   display: flex;
-  align-items: center;
   position: relative;
+  flex-direction: column;
+`;
+
+const Section = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
 `;
 
 const Icon = styled.div`
@@ -40,7 +52,7 @@ const Icon = styled.div`
 
 const Likes = styled.div`
   position: absolute;
-  top: 20%;
+  top: 10px;
   left: 10px;
   transform: translate(-50%, -50%);
   display: flex;
@@ -56,12 +68,12 @@ const LikeButtons = styled.div`
   flex-direction: column;
 
   .fa {
+    cursor: pointer;
     color: black;
     position: relative;
     ::after {
       content: '';
       display: inline-block;
-      background-color: white;
       height: 90%;
       width: 90%;
       position: absolute;
@@ -70,25 +82,156 @@ const LikeButtons = styled.div`
       z-index: -1;
     }
   }
+
+  .like {
+    ::after {
+      /* Adjust background-color with like.color prop */
+      background-color: ${props => props.like.color};
+    }
+  }
+
+  .dislike {
+    ::after {
+      /* Adjust background-color with dislike.color prop */
+      background-color: ${props => props.dislike.color};
+    }
+  }
 `;
 
-const Comment = ({ comment }) => {
+const Time = styled.span`
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+`;
+
+const ImageContainer = styled.div`
+  height: 7em;
+  width: fit-content;
+  position: relative;
+`;
+
+const Image = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  cursor: pointer;
+  :hover {
+    opacity: 0.7;
+  }
+`;
+
+const Delete = styled.button`
+  position: absolute;
+  top: -0.6em;
+  z-index: 1;
+  right: 1em;
+  padding: 3px 5px;
+`;
+
+const Comment = ({ comment, listOfComments, setListOfComments, setCommentCount, commentCount }) => {
+
+  // State
+  const [ showModal, setShowModal ] = useState(false);
+  const [ modalInfo, setModalInfo ] = useState({
+    image: null,
+    caption: null
+  });
+
+  // Context
+  const { user } = useContext(UserContext);
+
+  // Extract commentid from params
+  const { postid } = useParams();
+
+  // Toggle full-size display of image
+  const toggleModal = (e) => {
+    if (showModal) {
+      setShowModal(false);
+    } else {
+      setModalInfo({
+        image: e.target.src,
+        caption: e.target.alt,
+      });
+      setShowModal(true);
+    }
+  };
+
+  // Like/dislike a comment
+  const like = async (status, commentid, e) => {
+    
+    const formData = qs.stringify({
+      'status': status
+    });
+
+    const config = {
+      withCredentials: true,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded;charset=utf-8'
+      }
+    };
+
+    try {
+      const response = await axios.put(`http://localhost:5000/posts/${postid}/comments/${commentid}`, formData, config);
+
+      // Successful
+      if (response.status === 200) {
+        // Find comment's index
+        const index = listOfComments.map(comment => comment._id).indexOf(response.data._id);
+
+        // Remove comment and insert updated comment
+        const newListOfComments = [ ...listOfComments ];
+        newListOfComments.splice(index, 1, response.data);
+        setListOfComments(newListOfComments);
+      }
+
+    } catch(err) {
+      console.log(err);
+    }
+  };
+
+  // Delete comment
+  const deleteComment = async (commentid, e) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/posts/${postid}/comments/${commentid}`, { withCredentials: true });
+
+      // Successful
+      if (response.status === 200) {
+        // Find comment's index
+        const index = listOfComments.map(comment => comment._id).indexOf(commentid);
+
+        // Remove comment from client
+        const newListOfComments = [ ...listOfComments ];
+        newListOfComments.splice(index, 1);
+        setListOfComments(newListOfComments);
+        setCommentCount(commentCount - 1);
+      }
+    } catch(err) {
+      console.log(err);
+    }
+  }
 
   // Get poster's icon
-  const icon = decideIcon(comment.poster.icon);
+  const icon = decideIcon((comment.poster && comment.poster.icon));
 
   return (
     <div>
       <Content>
-        <Likes>
-          <LikeButtons>
-            <i className="fa fa-arrow-circle-up fa-lg" aria-hidden="true"></i>
-            <i className="fa fa-arrow-circle-down fa-lg" aria-hidden="true"></i>
-          </LikeButtons>
-          <span className="likes">{comment.likes}</span>
-        </Likes>
-        <Link to={`/users/${comment.poster._id}`}><Icon icon={{ type: icon }} /></Link>
-        <Bubble description={comment.description} />
+        <Section>
+          <Likes>
+            {user ? <LikeButtons like={(comment.status && comment.status === 'like') ? { color: '#ff4501' } : { color: 'white' } } dislike={(comment.status && comment.status === 'dislike') ? { color: '#ff4501' } : { color: 'white' } }>
+              <i onClick={like.bind(null, 'like', comment._id)} className="fa fa-arrow-circle-up fa-lg like" aria-hidden="true"></i>
+              <i onClick={like.bind(null, 'dislike', comment._id)} className="fa fa-arrow-circle-down fa-lg dislike" aria-hidden="true"></i>
+            </LikeButtons> : null}
+            <span className="likes">{comment.likes}</span>
+          </Likes>
+          <Link to={`/users/${comment.poster && comment.poster._id}`}><Icon icon={{ type: icon }} /></Link>
+          <Bubble description={comment.description} />
+          <Time>{new Date(comment.date_posted).toDateString()}</Time>
+          {(user && user._id === (comment.poster && comment.poster._id)) ? <Delete className="btn btn-danger" role="button" onClick={deleteComment.bind(null, comment._id)}>Delete</Delete> : null}
+        </Section>
+        {showModal ? <ImageModal modalInfo={modalInfo} toggleModal={toggleModal} /> : null}
+        {(comment.attachment && comment.attachment.location) ? <ImageContainer className="comment-img">
+                                                                <Image onClick={toggleModal} src={comment.attachment.location} className="img-fluid" />
+                                                               </ImageContainer> : null}
       </Content>
     </div>
   );

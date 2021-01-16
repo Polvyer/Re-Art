@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
@@ -7,6 +7,9 @@ import { useParams } from 'react-router-dom';
 import Create from './Create';
 import List from './List';
 import Error from '../../Error';
+
+// Context
+import { UserContext } from '../../../context/UserContext';
 
 /* Comment section of post */
 
@@ -23,7 +26,7 @@ const Container = styled.div`
   box-shadow: 0 0 10px black;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
 
   .number {
     color: white;
@@ -42,6 +45,9 @@ const Comments = ({ numberOfComments }) => {
   const [ commentCount, setCommentCount ] = useState(0);
   const [ errors, setErrors ] = useState([]); // move to view component????
 
+  // Context
+  const { user } = useContext(UserContext);
+
   // Extract :postid from params
   const { postid } = useParams();
 
@@ -49,7 +55,7 @@ const Comments = ({ numberOfComments }) => {
   useEffect(() => {
     async function fetchComments() {
       try {
-        const response = await axios.get(`http://localhost:5000/posts/${postid}/comments`);
+        const response = await axios.get(`http://localhost:5000/posts/${postid}/comments`, { withCredentials: true });
 
         // Successful
         if (response.status === 200) {
@@ -157,8 +163,8 @@ const Comments = ({ numberOfComments }) => {
   return (
     <Container>
       <span className="number">{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
-      <List listOfComments={listOfComments} />
-      <Create commentInput={commentInput} changeCommentInput={changeCommentInput} postComment={postComment} picture={attachment.image} changeAttachment={changeAttachment} removeAttachment={removeAttachment} />
+      <List listOfComments={listOfComments} setListOfComments={setListOfComments} setCommentCount={setCommentCount} commentCount={commentCount} />
+      {user ? <Create commentInput={commentInput} changeCommentInput={changeCommentInput} postComment={postComment} picture={attachment.image} changeAttachment={changeAttachment} removeAttachment={removeAttachment} /> : null}
     </Container>
   );
 };

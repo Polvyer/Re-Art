@@ -81,7 +81,7 @@ const View = () => {
       <Header art_type={data.art_type} title={data.title} />
       <Content>
         <Details data={data} />
-        <Comments numberOfComments={data.numberOfComments} />
+        <Comments posterid={data.poster._id} numberOfComments={data.numberOfComments} />
       </Content>
     </Container>
   );

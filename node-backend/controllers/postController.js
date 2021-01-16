@@ -2,6 +2,7 @@ const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const verifyToken = require('../config/verifyToken');
 var AWS = require('aws-sdk');
+const jwt = require('jsonwebtoken');
 
 require('dotenv').config();
 
@@ -11,6 +12,8 @@ const Post = require('../models/post');
 const Portfolio = require('../models/portfolio');
 const Comment = require('../models/comment');
 const Image = require('../models/image');
+const Commented = require('../models/commented');
+const { post } = require('../app');
 
 // Multer ships with storage engines DiskStorage and MemoryStorage
 // And Multer adds a body object and a file or files object to the request object.
@@ -156,7 +159,6 @@ exports.post_detail = async (req, res, next) => {
     const data = { ...response._doc, poster: { _id: response._doc.poster._id, icon: response._doc.poster.icon, owner: response._doc.poster.owner.username } };
     return res.status(200).json(data);
   } catch(err) {
-    console.log(err)
     return next(err);
   }
 };
@@ -171,17 +173,74 @@ exports.post_delete = function(req, res, next) {
   res.send('TODO: Post delete: ' + req.params.postid);
 };
 
-// Send list of all Comments
+// Send list of all Comments (DONE)
 exports.comment_list = async (req, res, next) => {
-  try {
-    const response = await Comment.find({ post: req.params.postid }).populate('poster').exec();
-    return res.status(200).json(response);
-  } catch(err) {
-    return next(err);
+
+  // Get token (if any)
+  const token = req.cookies.token || '';
+
+  if (token) { // User is logged
+
+    // Get userid
+    let token_payload;
+    try {
+      token_payload = await jwt.verify(token, process.env.JWT_SECRET);
+    } catch(err) {
+      return next(err);
+    }
+    const userid = token_payload.id;
+
+    // Get original list of comments
+    let response;
+    try {
+      response = await Comment.find({ post: req.params.postid }).populate('poster').populate('attachment').exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    // Get modified list of comments
+    const getModifiedList = async () => {
+      return Promise.all(response.map(async (comment) => {
+
+        // Look for a relationship
+        let relationship;
+        try {
+          relationship = await Commented.findOne({ portfolioid: userid, commentid: comment._id }).exec();
+        } catch(err) {
+          return next(err);
+        }
+  
+        if (relationship) { // Relationship between user and comment exists
+          comment._doc.status = relationship.status;
+          return comment._doc;
+        } else { // No relationship between user and comment exists
+          comment._doc.status = 'neutral';
+          return comment._doc;
+        }
+      }));
+    };
+
+    getModifiedList()
+      .then(modifiedList => {
+        return res.status(200).json(modifiedList);
+      })
+      .catch(err => {
+        next(err);
+      })
+
+  } else { // User is not logged in
+
+    // Get original list of comments and return
+    try {
+      const response = await Comment.find({ post: req.params.postid }).populate('poster').populate('attachment').exec();
+      return res.status(200).json(response);
+    } catch(err) {
+      return next(err);
+    }
   }
 };
 
-// Handle Comment create
+// Handle Comment create (DONE)
 exports.comment_create = [
 
   verifyToken,
@@ -203,6 +262,7 @@ exports.comment_create = [
       return next(err);
     }
 
+    // Initialize new comment
     let newComment = {
       description: req.body.description,
       poster: req.portfolio._id,
@@ -210,11 +270,58 @@ exports.comment_create = [
     };
 
     if (file) { // Attachment included
-      console.log('Attachment included');
-      return res.status(500).json('to-do');
+
+      // AWS credentials
+      let s3bucket = new AWS.S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION
+      });
+
+      // Where you want to store your file
+      var params = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: Date.now() + file.originalname,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+        ACL: "public-read"
+      };
+
+      // Upload to S3 bucket
+      s3bucket.upload(params, async function(err, data) {
+        if (err) { return next(err); }
+
+        /* Create new image */
+        const newImage = new Image({
+          key: data.Key,
+          location: data.Location,
+          mimetype: file.mimetype,
+          size: file.size,
+          type: 'Comment',
+        });
+
+        try {
+          await newImage.save();
+        } catch(err) {
+          return next(err);
+        }
+
+        /* Create new comment */
+        newComment.attachment = newImage._id;
+
+        try {
+          const comment = new Comment(newComment);
+          await comment.save();
+          const response = await comment.populate('poster').populate('attachment').execPopulate();
+          return res.status(200).json(response);
+        } catch(err) {
+          return next(err);
+        }
+      });
     } 
     
     else { // No attachment
+
       const comment = new Comment(newComment);
       try {
         await comment.save();
@@ -224,21 +331,319 @@ exports.comment_create = [
         return next(err);
       }
     }
-    
-    console.log(file);
-    console.log(req.portfolio._id);
-    console.log(req.params.postid);
-    res.send('TODO: Comment create');
   }
   
 ];
 
-// Handle Comment delete
-exports.comment_delete = function(req, res, next) {
-  res.send('TODO: Comment delete: ' + req.params.commentid + req.params.postid);
-};
+// Handle Comment delete (DONE)
+exports.comment_delete = [
 
-// Handle Comment update
-exports.comment_update = function(req, res, next) {
-  res.send('TODO: Comment update: ' + req.params.commentid + req.params.postid);
-};
+  verifyToken,
+
+  async (req, res, next) => {
+
+    // Find comment
+    let commentFound;
+    try {
+      commentFound = await Comment.findById(req.params.commentid).populate('attachment').exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    // Check if any comment was found
+    if (!commentFound) {
+      return res.status(404).json('Comment does not exist');
+    }
+
+    // See if user is poster (only poster can delete)
+    if (commentFound.poster.toString() !== req.portfolio._id.toString()) {
+      return res.status(401).json('You are not allowed to delete this comment');
+    }
+
+    // Delete commented relationships associated with comment
+    try {
+      await Commented.deleteMany({ commentid: req.params.commentid }).exec();
+    } catch(err) {
+      return next(err);
+    }
+    
+    // Find post
+    let postFound;
+    try {
+      postFound = await Post.findById(commentFound.post).exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    // Check if any post was found
+    if (!postFound) {
+      return res.status(404).json('Post does not exist');
+    }
+
+    // Construct updated post with one less comment
+    const updatedPost = new Post({
+      title: postFound.title,
+      summary: postFound.summary,
+      art_type: postFound.art_type,
+      hashtags: postFound.hashtags,
+      private: postFound.private,
+      poster: postFound.poster,
+      date_posted: postFound.date_posted,
+      image: postFound.image,
+      numberOfComments: postFound.numberOfComments - 1, // one less comment
+      _id: postFound._id,
+    });
+
+    // Update post
+    try {
+      await Post.findByIdAndUpdate(postFound._id, updatedPost, {});
+    } catch(err) {
+      return next(err);
+    }
+
+    if (commentFound.attachment) { // Attachment found
+
+      // AWS credentials
+      let s3bucket = new AWS.S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION
+      });
+
+      let params = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: commentFound.attachment.key
+      }
+
+      // Delete comment image from S3
+      s3bucket.deleteObject(params, async (err, data) => {
+        if (err) { return next(err); }
+
+        // Delete image
+        try {
+          await Image.findByIdAndRemove(commentFound.attachment._id);
+        } catch(err) {
+          return next(err);
+        }
+
+        // Delete comment
+        try {
+          await Comment.findByIdAndRemove(commentFound._id);
+          return res.status(200).json('Successful');
+        } catch(err) {
+          return next(err);
+        }
+      });
+    }
+
+    else { // No attachment found
+      
+      // Delete comment
+      try {
+        await Comment.findByIdAndRemove(commentFound._id);
+        return res.status(200).json('Successful');
+      } catch(err) {
+        return next(err);
+      }
+    }
+  }
+];
+
+// Handle Comment update (DONE)
+exports.comment_update = [
+
+  verifyToken,
+
+  async (req, res, next) => {
+    
+    // See if any relationship exists between the user and the comment
+    let response;
+    try {
+      response = await Commented.findOne({ portfolioid: req.portfolio._id, commentid: req.params.commentid }).exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    if (response) { // Relationship exists
+
+      let returnStatus;
+
+      // Get comment's number of likes
+      let comment;
+      try {
+        comment = await Comment.findById(req.params.commentid).exec();
+      } catch(err) {
+        return next(err);
+      }
+
+      const newComment = {
+        description: comment.description,
+        date_posted: comment.date_posted,
+        poster: comment.poster,
+        post: comment.post,
+        _id: comment._id,
+      };
+
+      // Comment does not require it
+      if (comment.attachment) {
+        newComment.attachment = comment.attachment;
+      }
+
+      if (response.status === 'like') { // User has liked comment before
+
+        if (req.body.status === 'like') { // User liked comment
+
+          // Delete relationship
+          try {
+            await Commented.findByIdAndRemove(response._id).exec();
+          } catch(err) {
+            return next(err);
+          }
+
+          newComment.likes = comment.likes - 1; // Take away like
+          returnStatus = 'neutral';
+        } 
+        
+        else if (req.body.status === 'dislike') { // User disliked comment
+
+          // Restructure relationship
+          const relationship = new Commented({
+            postid: response.postid,
+            commentid: req.params.commentid,
+            portfolioid: response.portfolioid,
+            status: req.body.status,
+            _id: response._id
+          });
+          
+          // Update relationship
+          try {
+            await Commented.findByIdAndUpdate(response._id, relationship, {});
+          } catch(err) {
+            return next(err);
+          }
+
+          newComment.likes = comment.likes - 2; // Take away like and add dislike
+          returnStatus = 'dislike';
+        }
+
+        else {
+          return res.status(400).json(['Bad request']);
+        }
+      } 
+      
+      else if (response.status === 'dislike') { // User has disliked comment before
+
+        if (req.body.status === 'like') { // User liked comment
+
+          // Restructure relationship
+          const relationship = new Commented({
+            postid: response.postid,
+            commentid: req.params.commentid,
+            portfolioid: response.portfolioid,
+            status: req.body.status,
+            _id: response._id
+          });
+          
+          // Update relationship
+          try {
+            await Commented.findByIdAndUpdate(response._id, relationship, {});
+          } catch(err) {
+            return next(err);
+          }
+
+          newComment.likes = comment.likes + 2; // Take away dislike and add like
+          returnStatus = 'like';
+        } 
+        
+        else if (req.body.status === 'dislike') { // User disliked comment
+
+          // Delete relationship
+          try {
+            await Commented.findByIdAndRemove(response._id).exec();
+          } catch(err) {
+            return next(err);
+          }
+
+          newComment.likes = comment.likes + 1; // Take away dislike
+          returnStatus = 'neutral';
+        }
+
+        else {
+          return res.status(400).json(['Bad request']);
+        }
+      } 
+      
+      else {
+        return res.status(400).json(['Bad request']);
+      }
+
+      // Update comment's number of likes
+      const updatedComment = new Comment(newComment);
+      try {
+        const retVal = await Comment.findByIdAndUpdate(req.params.commentid, updatedComment, { new: true }).exec();
+        const ret = await retVal.populate('poster').populate('attachment').execPopulate();
+        ret._doc.status = returnStatus;
+        return res.status(200).json(ret);
+      } catch(err) {
+        return next(err);
+      }
+    }
+
+    else { // No relationship exists
+
+      /* Create a new relationship */
+      const relationship = new Commented({
+        postid: req.params.postid,
+        commentid: req.params.commentid,
+        portfolioid: req.portfolio._id,
+        status: req.body.status
+      });
+
+      try {
+        await relationship.save();
+      } catch(err) {
+        return next(err);
+      }
+
+      // Get comment's number of likes
+      let comment;
+      try {
+        comment = await Comment.findById(req.params.commentid).exec();
+      } catch(err) {
+        return next(err);
+      }
+
+      const newComment = {
+        description: comment.description,
+        date_posted: comment.date_posted,
+        poster: comment.poster,
+        post: comment.post,
+        _id: comment._id,
+      };
+
+      // Comment does not require it
+      if (comment.attachment) {
+        newComment.attachment = comment.attachment;
+      }
+
+      if (req.body.status === 'like') { // User liked comment
+        newComment.likes = comment.likes + 1;
+      } else if (req.body.status === 'dislike') { // User disliked comment
+        newComment.likes = comment.likes - 1;
+      } else { // Something else
+        return res.status(400).json('Bad request');
+      }
+
+      // Update comment's number of likes
+      const updatedComment = new Comment(newComment);
+      try {
+        const retVal = await Comment.findByIdAndUpdate(req.params.commentid, updatedComment, { new: true }).exec();
+        const ret = await retVal.populate('poster').populate('attachment').execPopulate();
+        ret._doc.status = req.body.status;
+        return res.status(200).json(ret);
+      } catch(err) {
+        return next(err);
+      }
+    }
+  }
+];
