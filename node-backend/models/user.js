@@ -10,5 +10,12 @@ const UserSchema = new Schema(
   }
 );
 
+UserSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject._id = returnedObject._id.toString()
+    delete returnedObject.__v
+  }
+});
+
 // Export model
 module.exports = mongoose.model('User', UserSchema);

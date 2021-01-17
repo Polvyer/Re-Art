@@ -43,6 +43,7 @@ const Comments = ({ numberOfComments }) => {
     image: null,
   });
   const [ commentCount, setCommentCount ] = useState(0);
+  const [ showSpinner, setShowSpinner ] = useState(false);
   const [ errors, setErrors ] = useState([]); // move to view component????
 
   // Context
@@ -132,6 +133,9 @@ const Comments = ({ numberOfComments }) => {
       return;
     }
 
+    // Show loading button
+    setShowSpinner(true);
+
     // Store form data
     const formData = new FormData();
     formData.append('attachment', attachment.file);
@@ -148,6 +152,9 @@ const Comments = ({ numberOfComments }) => {
       // POST request to /posts/:postid/comments
       const response = await axios.post(`http://localhost:5000/posts/${postid}/comments`, formData, config);
 
+      // Hide loading button
+      setShowSpinner(false);
+
       // Successful
       if (response.status === 200) {
         setListOfComments(listOfComments.concat(response.data));
@@ -156,15 +163,24 @@ const Comments = ({ numberOfComments }) => {
         removeAttachment();
       }
     } catch(err) {
+      // Hide loading button
+      setShowSpinner(false);
+
       console.log(err);
     }
   };
 
+  // Sort comments by number of likes
+  let sortedListOfComments = [...listOfComments];
+  if (listOfComments.length > 0) {
+    sortedListOfComments = listOfComments.sort((a, b) => a.likes > b.likes ? -1 : 1)
+  }
+
   return (
     <Container>
       <span className="number">{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
-      <List listOfComments={listOfComments} setListOfComments={setListOfComments} setCommentCount={setCommentCount} commentCount={commentCount} />
-      {user ? <Create commentInput={commentInput} changeCommentInput={changeCommentInput} postComment={postComment} picture={attachment.image} changeAttachment={changeAttachment} removeAttachment={removeAttachment} /> : null}
+      <List listOfComments={sortedListOfComments} setListOfComments={setListOfComments} setCommentCount={setCommentCount} commentCount={commentCount} />
+      {user ? <Create showSpinner={showSpinner} commentInput={commentInput} changeCommentInput={changeCommentInput} postComment={postComment} picture={attachment.image} changeAttachment={changeAttachment} removeAttachment={removeAttachment} /> : null}
     </Container>
   );
 };

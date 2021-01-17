@@ -38,7 +38,7 @@ const Post = ({ post, toggleModal }) => {
         <CardFooter>
           <Section>
             <Icon icon={{ type: icon }} />
-            <Link className="username-link" to={`/users/${post.poster._id}`}><Name>{post.poster.owner}</Name></Link>
+            {post.poster.icon !== 'Anonymous' ? <Link className="username-link" to={`/users/${post.poster._id}`}><Name>{post.poster.owner}</Name></Link> : null}
           </Section>
           <Section>
             <CommentIcon icon={{ type: Chat }} />

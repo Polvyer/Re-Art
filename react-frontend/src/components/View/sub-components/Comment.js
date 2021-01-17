@@ -207,7 +207,7 @@ const Comment = ({ comment, listOfComments, setListOfComments, setCommentCount, 
     } catch(err) {
       console.log(err);
     }
-  }
+  };
 
   // Get poster's icon
   const icon = decideIcon((comment.poster && comment.poster.icon));
@@ -223,7 +223,7 @@ const Comment = ({ comment, listOfComments, setListOfComments, setCommentCount, 
             </LikeButtons> : null}
             <span className="likes">{comment.likes}</span>
           </Likes>
-          <Link to={`/users/${comment.poster && comment.poster._id}`}><Icon icon={{ type: icon }} /></Link>
+          {comment.poster.icon !== 'Anonymous' ? <Link to={`/users/${comment.poster && comment.poster._id}`}><Icon icon={{ type: icon }} /></Link> : <Icon icon={{ type: icon }} /> }
           <Bubble description={comment.description} />
           <Time>{new Date(comment.date_posted).toDateString()}</Time>
           {(user && user._id === (comment.poster && comment.poster._id)) ? <Delete className="btn btn-danger" role="button" onClick={deleteComment.bind(null, comment._id)}>Delete</Delete> : null}

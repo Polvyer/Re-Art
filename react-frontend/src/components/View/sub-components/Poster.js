@@ -41,7 +41,7 @@ const Poster = ({ icon, owner, _id }) => {
   return (
     <Container>
       <Icon icon={{ type: usericon }} />
-      <Link to={`/users/${_id}`} className="username">{owner}</Link>
+      {icon !== 'Anonymous' ? <Link to={`/users/${_id}`} className="username">{owner}</Link> : null}
     </Container>
   );
 };

@@ -20,6 +20,10 @@ const Nav = styled.nav`
     rgba(28, 24, 52, 1)
   );
   width: 100%;
+
+  .Notifications {
+    cursor: no-drop;
+  }
 `;
 
 const Search = styled.div`
@@ -53,7 +57,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle, setShowLogoutMod
     { href: "/", src: house_door_fill, alt: "Home, Search Results" },
     { href: "/posts/new", src: file_earmark_arrow_up_fill, alt: "Upload Your Image, Ask For Feedback, Finalize Your Post" },
     { href: `/users/${user ? user._id : null}`, src: person_circle, alt: "Your Portfolio, Editing Portfolio" },
-    { href: "#", src: bell_fill, alt: "notifications" },
+    { href: "#", src: bell_fill, alt: "Notifications" },
   ];
 
   const loggedOutIcons = [
@@ -83,7 +87,7 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle, setShowLogoutMod
         {icons.map(icon => {
           return (
             <Link key={icon.alt} to={icon.href} className="navbar-brand">
-              {icon.alt.includes(navTitle) ? <ActiveIcon src={icon.src} alt={icon.alt} /> : <Icon src={icon.src} alt={icon.alt} />}
+              {icon.alt.includes(navTitle) ? <ActiveIcon src={icon.src} alt={icon.alt} /> : <Icon className={icon.alt} src={icon.src} alt={icon.alt} />}
             </Link>
           );
         })}

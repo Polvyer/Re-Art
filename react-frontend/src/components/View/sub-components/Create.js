@@ -75,6 +75,18 @@ const HiddenInput = styled.input`
   display: none;
 `;
 
+// Loading button styles
+const SpinnerButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Spinner
+  span {
+    margin-right: 5px;
+  }
+`;
+
 const ImageContainer = styled.div`
   height: 10em;
   width: fit-content;
@@ -93,7 +105,8 @@ const Remove = styled.img`
   cursor: pointer;
 `;
 
-const Create = ({ commentInput, changeCommentInput, postComment, picture, changeAttachment, removeAttachment }) => {
+const Create = ({ showSpinner, commentInput, changeCommentInput, postComment, picture, changeAttachment, removeAttachment }) => {
+  
   return (
     <Container>
       <Section>
@@ -104,15 +117,25 @@ const Create = ({ commentInput, changeCommentInput, postComment, picture, change
         <CustomInput htmlFor="file-upload" className="custom-file-upload mx-auto">
           <i className="fa fa-paperclip" aria-hidden="true"></i>
           <span> Attach image</span>
-          <HiddenInput onChange={changeAttachment} id="file-upload" type="file" />
+          <HiddenInput disabled={showSpinner} onChange={changeAttachment} id="file-upload" type="file" />
         </CustomInput>
-        <button onClick={postComment} className="btn btn-warning">Post</button>
+        {showSpinner ? <LoadingButton word='Posting' /> : <button onClick={postComment} disabled={!commentInput} className="btn btn-warning">Post</button> }
       </Section>
       {picture ? <ImageContainer>
                   <Image src={picture} className="img-fluid" />
                   <Remove onClick={removeAttachment} src={x} width="30em" />
                 </ImageContainer> : null}
     </Container>
+  );
+};
+
+// For when the user posts a comment
+const LoadingButton = ({ word }) => {
+  return (
+    <SpinnerButton className="btn btn-warning" type="button" disabled>
+      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      {word}...
+    </SpinnerButton>
   );
 };
 

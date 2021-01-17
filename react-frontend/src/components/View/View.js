@@ -80,7 +80,7 @@ const View = () => {
       {errors.map((error, index) => <Error key={index} closeError={closeError} error={error} index={index} errorRef={errorRef} />)}
       <Header art_type={data.art_type} title={data.title} />
       <Content>
-        <Details data={data} />
+        <Details data={data} setData={setData} />
         <Comments posterid={data.poster._id} numberOfComments={data.numberOfComments} />
       </Content>
     </Container>

@@ -53,6 +53,9 @@ const SpeechBubble = styled.p`
   width: 100%;
   position:relative;
   border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   ::before {
     content: "";
     width: 0px;

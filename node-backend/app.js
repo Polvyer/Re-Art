@@ -58,8 +58,14 @@ app.use(function(err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500).json(['Oops! Something went wrong, please try again.']);
+  if (err.name === 'CastError') {
+    return res.status(400).json(['Malformatted id']);
+  } else if (err.name === 'ValidationError') {
+    return res.status(400).json([err.message]);
+  }
+
+  // Error for any other situation that hasn't been predicted
+  return res.status(err.status || 500).json(['Oops! Something went wrong, please try again.']);
 });
 
 module.exports = app;

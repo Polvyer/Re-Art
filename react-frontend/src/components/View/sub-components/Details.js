@@ -27,7 +27,7 @@ const Time = styled.figcaption`
   color: white;
 `;
 
-const Details = ({ data }) => {
+const Details = ({ data, setData }) => {
 
   return (
     <Container>
@@ -35,7 +35,7 @@ const Details = ({ data }) => {
       <Image image={data.image.location} owner={data.poster.owner} />
       <Summary summary={data.summary} />
       <Time className="figure-caption text-right">{new Date(data.date_posted).toDateString()}</Time>
-      <Buttons priv={data.private} _id={data.poster._id} />
+      <Buttons setData={setData} priv={data.private} _id={data.poster._id} />
     </Container>
   );
 };

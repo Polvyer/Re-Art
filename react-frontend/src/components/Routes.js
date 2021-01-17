@@ -93,7 +93,7 @@ const Routes = () => {
   return (
     <BrowserRouter>
       <Navbar setShowLogoutModal={setShowLogoutModal} toggleSidebar={toggleSidebar} sidebarActive={sidebarActive} user={user} navTitle={navTitle} />
-      {showLogoutModal ? <LogoutModal logout={logout} setShowLogoutModal={setShowLogoutModal} /> : null}
+      {showLogoutModal ? <LogoutModal logout={logout} setShowLogoutModal={setShowLogoutModal} title='Logout' body="Are you sure you want to logout?" /> : null}
       <UserContext.Provider value={value}>
         <Switch>
           <Route exact path='/'>

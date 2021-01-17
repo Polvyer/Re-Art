@@ -38,53 +38,52 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Send list of all Posts
-exports.post_list = function(req, res, next) {
+// Send list of all Posts (DONE)
+exports.post_list = async (req, res, next) => {
 
-  // Get all posts from database
-  Post.find()
-    .populate('image')
-    .populate({
-      path: 'poster',
-      model: 'Portfolio',
-      populate: {
-        path: 'owner',
-        model: 'User',
-      }
-    })
-    .exec(function(err, post_list) {
-      if (err) { return next(err); }
+  // Get all public posts from database
+  let post_list;
+  try {
+    post_list = await Post.find({ private: false }).populate('image')
+                      .populate({ path: 'poster', model: 'Portfolio', populate: { path: 'owner', model: 'User' }}).exec()
+  } catch(err) {
+    return next(err);
+  }
 
-      // Modify post list to liking
-      const posts = post_list.map(post => {
-        const poster = {
-          _id: post.poster._id,
-          icon: post.poster.icon,
-          owner: post.poster.owner.username,
-        };
-        return {
-          art_type: post.art_type,
-          date_posted: post.date_posted,
-          hashtags: post.hashtags,
-          image: post.image.location, // Image URL
-          poster: poster, // _id (portfolio id), icon, owner (username)
-          private: post.private,
-          summary: post.summary,
-          title: post.title,
-          numberOfComments: (post.numberOfComments || 0),
-          _id: post._id
-        };
-      });
+  // Modify post list to liking
+  const posts = post_list.map(post => {
+    const poster = {
+      _id: post.poster._id,
+      icon: post.poster.icon,
+      owner: post.poster.owner.username,
+    };
+    return {
+      art_type: post.art_type,
+      date_posted: post.date_posted,
+      hashtags: post.hashtags,
+      image: post.image.location, // image URL
+      poster: poster, // _id (portfolio id), icon, owner (username)
+      private: post.private,
+      summary: post.summary,
+      title: post.title,
+      numberOfComments: (post.numberOfComments || 0),
+      _id: post._id
+    };
+  });
 
-      // Successful, so send
-      return res.status(200).json(posts);
-    });
+  // Successful, so send
+  return res.status(200).json(posts);
 };
 
-// Handle Post create
+// Handle Post create (DONE)
 exports.post_create = [
 
   verifyToken,
+
+  // Sanitise fields
+  body('title').trim().escape(),
+  body('summary').trim().escape(),
+  body('hashtags').trim().escape(),
 
   // Stores image in uploads folder using
   // multer and creates a reference to the file
@@ -152,23 +151,50 @@ exports.post_create = [
   }
 ]
 
-// Send details for a specific Post
+// Send details for a specific Post (DONE)
 exports.post_detail = async (req, res, next) => {
   try {
     const response = await Post.findById(req.params.postid).populate('image').populate({ path: 'poster', model: 'Portfolio', populate: { path: 'owner', model: 'User' }}).exec();
-    const data = { ...response._doc, poster: { _id: response._doc.poster._id, icon: response._doc.poster.icon, owner: response._doc.poster.owner.username } };
-    return res.status(200).json(data);
+
+    if (response) {
+      const data = { ...response._doc, poster: { _id: response._doc.poster._id, icon: response._doc.poster.icon, owner: response._doc.poster.owner.username } };
+      return res.status(200).json(data);
+    } else {
+      return res.status(404).json(["No post found"]);
+    }
   } catch(err) {
     return next(err);
   }
 };
 
-// Handle Post update
-exports.post_update = function(req, res, next) {
-  res.send('TODO: Post update: ' + req.params.postid);
-};
+// Handle Post update (DONE)
+exports.post_update = [
 
-// Hande Post delete
+  verifyToken,
+
+  async (req, res, next) => {
+    const body = req.body;
+
+    const post = {};
+    if (body.private === 'false') {
+      post.private = true;
+    } else {
+      post.private = false;
+    }
+
+    try {
+      const updatedPost = await Post.findByIdAndUpdate(req.params.postid, post, { new: true }).exec();
+      const populatedPost = await updatedPost.populate('image').populate({ path: 'poster', model: 'Portfolio', populate: { path: 'owner', model: 'User' }}).execPopulate();
+      const modifiedPost = { ...populatedPost._doc, poster: { _id: populatedPost._doc.poster._id, icon: populatedPost._doc.poster.icon, owner: populatedPost._doc.poster.owner.username } };
+      return res.status(200).json(modifiedPost);
+    } catch(err) {
+      return next(err);
+    }
+  }
+
+];
+
+// Handle Post delete
 exports.post_delete = function(req, res, next) {
   res.send('TODO: Post delete: ' + req.params.postid);
 };
