@@ -20,9 +20,21 @@ const Nav = styled.nav`
     rgba(28, 24, 52, 1)
   );
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
 
   .Notifications {
     cursor: no-drop;
+  }
+
+  .nav-search {
+    transform: translateY(-0.1em);
+  }
+
+  .nav-icons {
+    flex-grow: 1;
+    text-align: right;
   }
 `;
 
@@ -42,6 +54,11 @@ const Icon = styled.img`
   width: 1.7em;
   height: 1.7em;
   filter: invert(100%) sepia(100%) saturate(2%) hue-rotate(43deg) brightness(102%) contrast(100%);
+
+  @media screen and (max-width: 300px) {
+    width: 1.6em;
+    height: 1.6em;
+  }
 `;
 
 const Title = styled.h4`
@@ -70,20 +87,20 @@ const Navbar = ({ toggleSidebar, sidebarActive, user, navTitle, setShowLogoutMod
   const icons = user ? [...loggedInIcons] : [...loggedOutIcons];
 
   // Determines whether to show search icon
-  let searchClasses = "navbar-brand";
+  let searchClasses = "navbar-brand nav-search";
   if ((navTitle !== "Home") && (navTitle !== "Search Results")) {
     searchClasses = "navbar-brand invisible";
   }
 
   return (
-    <Nav className="navbar navbar-expand-lg justify-content-between">
+    <Nav className="navbar navbar-expand-lg">
       <Search onClick={toggleSidebar} className={searchClasses} >
         {sidebarActive ? <Icon src={x} alt="search" /> : <Icon src={search} alt="search" />}
       </Search>
-      <Title className="navbar-text">
+      <Title className="navbar-text nav-text">
         {navTitle}
       </Title>
-      <div>
+      <div className="nav-icons">
         {icons.map(icon => {
           return (
             <Link key={icon.alt} to={icon.href} className="navbar-brand">
