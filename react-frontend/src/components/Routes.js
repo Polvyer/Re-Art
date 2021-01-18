@@ -72,8 +72,6 @@ const Routes = () => {
         if (response.status === 200) {
           // Set user globally
           setUser(response.data); // { _id, owner (username), icon, avatar, biography }
-        } else {
-          console.log('Status: ', response.status);
         }
       } catch(error) {
         if (error.response) {

@@ -51,14 +51,14 @@ const SpinnerButton = styled.button`
   }
 `;
 
-const Buttons = ({ priv, _id, setData }) => {
+const Buttons = ({ priv, _id, setData, setErrors }) => {
 
   // State
   const [ showLogoutModal, setShowLogoutModal ] = useState(false);
   const [ showSpinner, setShowSpinner ] = useState(false);
 
   // Context
-  const { user } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
 
   // Used to redirect user to the home page when the user deletes their post
   const history = useHistory();
@@ -69,19 +69,36 @@ const Buttons = ({ priv, _id, setData }) => {
   // Handle post deletion
   const deletePost = async () => {
 
+    // Hides delete post modal
+    setShowLogoutModal(false);
+
     // Show loading button
     setShowSpinner(true);
     
     try {
       // DELETE request to /posts/:postid
-      const response = await axios.delete(`http://localhost:5000/posts/${postid}`);
+      const response = await axios.delete(`http://localhost:5000/posts/${postid}`, { withCredentials: true });
 
       // Successful
       if (response.status === 200) {
         history.push('/posts');
       }
     } catch(err) {
-      console.log(err);
+
+      // Hide loading button
+      setShowSpinner(false);
+
+      if (err.response) { // Intentional error
+        if (err.response.status === 401) { // Log out user
+          setUser(null);
+          history.push('/session/new');
+        } else {
+          setErrors(err.response.data);
+        }
+
+      } else { // Server down most likely
+        setErrors(['Oops! Something went wrong, please try again.']);
+      }
     }
   };
 
@@ -108,7 +125,17 @@ const Buttons = ({ priv, _id, setData }) => {
         setData(response.data);
       }
     } catch(err) {
-      console.log(err);
+      if (err.response) { // Intentional error
+        if (err.response.status === 401) { // Log out user
+          setUser(null);
+          history.push('/session/new');
+        } else {
+          setErrors(err.response.data);
+        }
+
+      } else { // Server down most likely
+        setErrors(['Oops! Something went wrong, please try again.']);
+      }
     }
   }
 

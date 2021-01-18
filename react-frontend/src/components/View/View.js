@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { Container, Content } from './Styles';
 
 // Components
@@ -44,6 +44,9 @@ const View = () => {
   // Used to allow us to call scrollIntoView into errors
   const errorRef = useRef(null);
 
+  // Used to redirect user to 404.html if not post is found
+  const history = useHistory();
+
   // Change navbar title
   useEffect(() => {
     setNavTitle('Viewing Post');
@@ -59,14 +62,18 @@ const View = () => {
         }
       } catch (err) {
         if (err.response) { // Intentional error
-          setErrors(err.response.data);
+          if ((err.response.status === 404) || (err.response.status === 400)) { // Post not found
+            history.push('/404.html');
+          } else {
+            setErrors(err.response.data);
+          }
         } else { // Server down most likely
           setErrors(['Oops! Something went wrong, please try again.']);
         }
       }
     }
     fetchPostDetails();
-  }, [postid]);
+  }, [postid, history]);
 
   // Closes error
   const closeError = (index) => {
@@ -80,8 +87,8 @@ const View = () => {
       {errors.map((error, index) => <Error key={index} closeError={closeError} error={error} index={index} errorRef={errorRef} />)}
       <Header art_type={data.art_type} title={data.title} />
       <Content>
-        <Details data={data} setData={setData} />
-        <Comments posterid={data.poster._id} numberOfComments={data.numberOfComments} />
+        <Details data={data} setData={setData} setErrors={setErrors} />
+        <Comments posterid={data.poster._id} numberOfComments={data.numberOfComments} setErrors={setErrors} />
       </Content>
     </Container>
   );

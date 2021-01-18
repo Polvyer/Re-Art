@@ -16,6 +16,10 @@ const verifyToken = async (req, res, next) => {
     // Verify the token
     const token_payload = await jwt.verify(token, process.env.JWT_SECRET);
 
+    if (!token_payload) {
+      return res.status(401).json(['Token invalid.']);
+    }
+
     // Token payload only stores portfolio id (this is determined in generateToken.js)
     req.portfolio = { "_id": token_payload.id };
 

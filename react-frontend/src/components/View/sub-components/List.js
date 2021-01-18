@@ -16,10 +16,10 @@ const Container = styled.div`
   }
 `;
 
-const List = ({ listOfComments, setListOfComments, setCommentCount, commentCount }) => {
+const List = ({ listOfComments, setListOfComments, setCommentCount, commentCount, setErrors }) => {
   return (
     <Container>
-      {listOfComments.map(comment => <Comment key={comment._id} comment={comment} listOfComments={listOfComments} setListOfComments={setListOfComments} commentCount={commentCount} setCommentCount={setCommentCount} />)}
+      {listOfComments.map(comment => <Comment key={comment._id} comment={comment} listOfComments={listOfComments} setListOfComments={setListOfComments} commentCount={commentCount} setCommentCount={setCommentCount} setErrors={setErrors} />)}
     </Container>
   );
 };

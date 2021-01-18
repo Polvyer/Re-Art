@@ -194,10 +194,110 @@ exports.post_update = [
 
 ];
 
-// Handle Post delete
-exports.post_delete = function(req, res, next) {
-  res.send('TODO: Post delete: ' + req.params.postid);
-};
+// Handle Post delete (DONE)
+exports.post_delete = [
+
+  verifyToken,
+
+  async(req, res, next) => {
+
+    // Find all comments in this post
+    let commentArr;
+    try {
+      commentArr = await Comment.find({ post: req.params.postid }).populate('attachment').exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    // AWS credentials
+    let s3bucket = new AWS.S3({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      region: process.env.AWS_REGION
+    });
+
+    // Delete each comment's image instances (if any)
+    try {
+      await commentArr.forEach(async (comment) => {
+
+        if (comment.attachment) { // Comment has an image instance
+
+          let params = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: comment.attachment.key
+          }
+
+          // Delete comment image from S3
+          s3bucket.deleteObject(params, async (err, data) => {
+            if (err) { return next(err); }
+
+            // Delete image
+            try {
+              await Image.findByIdAndRemove(comment.attachment._id);
+              return;
+            } catch(err) {
+              return next(err);
+            }
+          });
+
+        } else { // Comment has no image instance
+          return;
+        }
+      });
+    } catch(err) {
+      return next(err);
+    }
+
+    // Delete commented relationships associated with post
+    try {
+      await Commented.deleteMany({ postid: req.params.postid }).exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    // Delete comments associated with comment
+    try {
+      await Comment.deleteMany({ post: req.params.postid }).exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    // Find post
+    let post;
+    try {
+      post = await Post.findById(req.params.postid).populate('image').exec();
+    } catch(err) {
+      return next(err);
+    }
+
+    let params = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: post.image.key
+    }
+
+    // Delete post image from S3
+    s3bucket.deleteObject(params, async (err, data) => {
+      if (err) { return next(err); }
+
+      // Delete image
+      try {
+        await Image.findByIdAndRemove(post.image._id).exec();
+      } catch(err) {
+        return next(err);
+      }
+
+      // Delete post
+      try {
+        await Post.findByIdAndRemove(req.params.postid).exec();
+      } catch(err) {
+        return next(err);
+      }
+
+      // Successful
+      return res.status(200).json('Successful');
+    });
+  }
+];
 
 // Send list of all Comments (DONE)
 exports.comment_list = async (req, res, next) => {

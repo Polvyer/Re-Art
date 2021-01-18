@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import styled from 'styled-components';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 
 // Components
 import Create from './Create';
 import List from './List';
-import Error from '../../Error';
 
 // Context
 import { UserContext } from '../../../context/UserContext';
@@ -33,7 +32,7 @@ const Container = styled.div`
   }
 `;
 
-const Comments = ({ numberOfComments }) => {
+const Comments = ({ numberOfComments, setErrors }) => {
 
   // State
   const [ listOfComments, setListOfComments ] = useState([]);
@@ -44,13 +43,15 @@ const Comments = ({ numberOfComments }) => {
   });
   const [ commentCount, setCommentCount ] = useState(0);
   const [ showSpinner, setShowSpinner ] = useState(false);
-  const [ errors, setErrors ] = useState([]); // move to view component????
 
   // Context
-  const { user } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
 
   // Extract :postid from params
   const { postid } = useParams();
+
+  // Used to redirect user to login page when their session expired
+  const history = useHistory();
 
   // Get list of comments for post
   useEffect(() => {
@@ -63,11 +64,15 @@ const Comments = ({ numberOfComments }) => {
           setListOfComments(response.data);
         }
       } catch(err) {
-        console.log(err);
+        if (err.response) { // Intentional error
+          setErrors(err.response.data);
+        } else { // Server down most likely
+          setErrors(['Oops! Something went wrong, please try again.']);
+        }
       }
     }
     fetchComments();
-  }, [postid]);
+  }, [postid, setErrors]);
 
   // Changes commentCount whenever numberOfComments changes
   useEffect(() => {
@@ -166,7 +171,16 @@ const Comments = ({ numberOfComments }) => {
       // Hide loading button
       setShowSpinner(false);
 
-      console.log(err);
+      if (err.response) { // Intentional error
+        if (err.response.status === 401) { // Log out user
+          setUser(null);
+          history.push('/session/new');
+        } else {
+          setErrors(err.response.data);
+        }
+      } else { // Server down most likely
+        setErrors(['Oops! Something went wrong, please try again.']);
+      }
     }
   };
 
@@ -179,7 +193,7 @@ const Comments = ({ numberOfComments }) => {
   return (
     <Container>
       <span className="number">{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
-      <List listOfComments={sortedListOfComments} setListOfComments={setListOfComments} setCommentCount={setCommentCount} commentCount={commentCount} />
+      <List listOfComments={sortedListOfComments} setListOfComments={setListOfComments} setCommentCount={setCommentCount} commentCount={commentCount} setErrors={setErrors} />
       {user ? <Create showSpinner={showSpinner} commentInput={commentInput} changeCommentInput={changeCommentInput} postComment={postComment} picture={attachment.image} changeAttachment={changeAttachment} removeAttachment={removeAttachment} /> : null}
     </Container>
   );
