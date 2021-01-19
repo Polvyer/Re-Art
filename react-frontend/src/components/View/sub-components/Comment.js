@@ -178,7 +178,7 @@ const Comment = ({ comment, listOfComments, setListOfComments, setCommentCount, 
     };
 
     try {
-      const response = await axios.put(`http://localhost:5000/posts/${postid}/comments/${commentid}`, formData, config);
+      const response = await axios.put(`/api/posts/${postid}/comments/${commentid}`, formData, config);
 
       // Enable liking buttons
       setDisableLiking(false);
@@ -219,7 +219,7 @@ const Comment = ({ comment, listOfComments, setListOfComments, setCommentCount, 
     setDisableButton(true);
 
     try {
-      const response = await axios.delete(`http://localhost:5000/posts/${postid}/comments/${commentid}`, { withCredentials: true });
+      const response = await axios.delete(`/api/posts/${postid}/comments/${commentid}`, { withCredentials: true });
 
       // Successful
       if (response.status === 200) {

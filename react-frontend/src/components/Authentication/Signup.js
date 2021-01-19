@@ -60,7 +60,7 @@ const Signup = () => {
 
     try {
       // POST request to /users
-      const response = await axios.post('http://localhost:5000/users', formValues, { withCredentials: true });
+      const response = await axios.post('/api/users', formValues, { withCredentials: true });
 
       if (response.status === 200) {
         // Set user globally

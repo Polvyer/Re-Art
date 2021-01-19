@@ -56,7 +56,7 @@ const View = () => {
   useEffect(() => {
     const fetchPostDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/posts/${postid}`);
+        const response = await axios.get(`/api/posts/${postid}`);
         if (response.status === 200) {
           setData(response.data);
         }

@@ -1,0 +1,46 @@
+version: "3.7"
+
+services:
+  server:
+    build:
+      context: ./node-backend
+      dockerfile: Dockerfile
+    image: myapp-server
+    container-name: myapp-node-backend
+    command: /usr/src/app/node_modules/.bin/nodemon ./bin/www
+    volumes:
+      - ./node-backend/:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "5000:5000"
+    env_file: ./server/.env
+    environment:
+      - NODE_ENV=development
+    networks:
+      - app-network
+
+  client:
+    build:
+      context: ./react-frontend
+      dockerfile: Dockerfile
+    image: myapp-client
+    container_name: myapp-react-frontend
+    command: npm start
+    volumes:
+      - ./react-frontend/:/usr/app
+      - /usr/app/node_modules
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+    node_modules:
+    web-root:
+        driver: local

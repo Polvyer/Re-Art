@@ -38,7 +38,7 @@ const Routes = () => {
   const logout = async (e) => {
     try {
       // DELETE request to /session
-      const response = await axios.delete('http://localhost:5000/session',  { withCredentials: true });
+      const response = await axios.delete('/api/session',  { withCredentials: true });
       
       if (response.status === 200) {
         // Hide logout modal
@@ -48,13 +48,13 @@ const Routes = () => {
         setUser(null);
 
         // Redirect to home page
-        window.location = 'http://localhost:3000/posts';
+        window.location = '/posts';
       }
     } catch(err) {
       if (err.response) {
         if (err.response.status === 401) {
           // User's session is already expired
-          window.location = 'http://localhost:3000/session/new';
+          window.location = '/session/new';
         }
       }
     }
@@ -66,7 +66,7 @@ const Routes = () => {
       try {
         // withCredentials indicates whether or not cross-site Access-Control requests should be made using credentials
         // GET request to /session
-        const response = await axios.get('http://localhost:5000/session',  { withCredentials: true });
+        const response = await axios.get('/api/session',  { withCredentials: true });
 
         // Check if status is 200
         if (response.status === 200) {

@@ -67,7 +67,7 @@ const Header = ({ art_type, title}) => {
 
   // Go to home page
   const goToHomePage = () => {
-    history.push('/posts');
+    history.goBack();
   };
 
   return (

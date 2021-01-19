@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file: ./node-backend/.env
+    environment:
+      NODE_ENV: production
+    networks:
+      - app-network
+  
+networks:
+  app-network:
+    driver: bridge
+  
+volumes:
+  node_modules:
+  web-root:
+    driver: local

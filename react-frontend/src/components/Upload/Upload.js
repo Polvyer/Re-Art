@@ -56,7 +56,7 @@ const Upload = () => {
       try {
         // withCredentials indicates whether or not cross-site Access-Control requests should be made using credentials
         // GET request to /session
-        await axios.get('http://localhost:5000/session',  { withCredentials: true });
+        await axios.get('/api/session',  { withCredentials: true });
       } catch(error) {
         if (error.response) {
           if (error.response.status === 401) { // Token or cookie expired
@@ -203,7 +203,7 @@ const Upload = () => {
     };
 
     // POST request to /posts (protected route)
-    axios.post('http://localhost:5000/posts', formData, config)
+    axios.post('/api/posts', formData, config)
       .then(response => {
         if (response.status === 200) {
           // Redirect to /posts

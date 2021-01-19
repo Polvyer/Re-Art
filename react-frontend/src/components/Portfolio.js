@@ -47,7 +47,7 @@ const Portfolio = () => {
     async function fetchPosts() {
       try {
         // GET request to /users/:userid (:userid => portfolio id)
-        const response = await axios.get(`http://localhost:5000/users/${userid}`, { withCredentials: true });
+        const response = await axios.get(`/api/users/${userid}`, { withCredentials: true });
         setData(response.data);
       } catch(err) {
         if (err.response) {

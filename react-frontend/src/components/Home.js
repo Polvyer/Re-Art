@@ -73,7 +73,7 @@ const Home = ({ sidebarActive, setSidebarActive }) => {
   const fetchPosts = async () => {
     try {
       // GET request to /posts
-      const response = await axios.get('http://localhost:5000/posts', { withCredentials: true });
+      const response = await axios.get('/api/posts', { withCredentials: true });
 
       // Check if status is 200
       if (response.status === 200) {

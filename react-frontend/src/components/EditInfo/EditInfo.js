@@ -54,7 +54,7 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
   useEffect(() => {
     async function authorizeUser() {
       try {
-        const response = await axios.get('http://localhost:5000/session', { withCredentials: true });
+        const response = await axios.get('/api/session', { withCredentials: true });
 
         // Successful
         if (response.status === 200) {
@@ -124,7 +124,7 @@ const EditInfo = ({ data, setData, info, setShowEditInfo, userid }) => { // info
       };
     
       // PUT request to /users/userid
-      const response = await axios.put(`http://localhost:5000/users/${userid}`, formData, config);
+      const response = await axios.put(`/api/users/${userid}`, formData, config);
 
       // If successful
       if (response.status === 200) {

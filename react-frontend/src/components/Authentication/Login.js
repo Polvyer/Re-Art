@@ -45,7 +45,7 @@ const Login = () => {
 
     try {
       // POST request to /session
-      const response = await axios.post('http://localhost:5000/session', formValues, { withCredentials: true });
+      const response = await axios.post('/api/session', formValues, { withCredentials: true });
 
       if (response.status === 200) {
         // Set user globally

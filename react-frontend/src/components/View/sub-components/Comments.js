@@ -57,7 +57,7 @@ const Comments = ({ numberOfComments, setErrors }) => {
   useEffect(() => {
     async function fetchComments() {
       try {
-        const response = await axios.get(`http://localhost:5000/posts/${postid}/comments`, { withCredentials: true });
+        const response = await axios.get(`/api/posts/${postid}/comments`, { withCredentials: true });
 
         // Successful
         if (response.status === 200) {
@@ -155,7 +155,7 @@ const Comments = ({ numberOfComments, setErrors }) => {
 
     try {
       // POST request to /posts/:postid/comments
-      const response = await axios.post(`http://localhost:5000/posts/${postid}/comments`, formData, config);
+      const response = await axios.post(`/api/posts/${postid}/comments`, formData, config);
 
       // Hide loading button
       setShowSpinner(false);

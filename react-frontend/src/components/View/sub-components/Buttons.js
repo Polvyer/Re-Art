@@ -77,7 +77,7 @@ const Buttons = ({ priv, _id, setData, setErrors }) => {
     
     try {
       // DELETE request to /posts/:postid
-      const response = await axios.delete(`http://localhost:5000/posts/${postid}`, { withCredentials: true });
+      const response = await axios.delete(`/api/posts/${postid}`, { withCredentials: true });
 
       // Successful
       if (response.status === 200) {
@@ -118,7 +118,7 @@ const Buttons = ({ priv, _id, setData, setErrors }) => {
 
     try {
       // PUT request to /posts/:postid
-      const response = await axios.put(`http://localhost:5000/posts/${postid}`, formData, config);
+      const response = await axios.put(`/api/posts/${postid}`, formData, config);
 
       // Successful
       if (response.status === 200) {
