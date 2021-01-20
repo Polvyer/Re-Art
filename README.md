@@ -1,5 +1,7 @@
-# Re:Art
+# [Re:Art](https://floating-hamlet-42717.herokuapp.com/posts)
 > A social media platform for visual artists who wish to improve their art. It focuses on community-sourced feedback where users help each other out.
+
+Website live at: https://floating-hamlet-42717.herokuapp.com
 
 <p align="center">
   <img src="https://media.giphy.com/media/KnQb2DFQMo0olzsRnQ/giphy.gif" />
